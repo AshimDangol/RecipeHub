@@ -1,0 +1,32 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+**/node_modules/
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+backend-node/.env
+
+# ── Build / generated output ──────────────────────────────────────────────────
+frontend/dist/
+frontend/coverage/
+
+# ── .NET / C# ─────────────────────────────────────────────────────────────────
+backend/**/bin/
+backend/**/obj/
+backend/**/*.user
+backend/**/*.suo
+backend/**/.vs/
+backend/**/recipenest.db
+backend/**/uploads/
+
+# ── Node.js uploads ───────────────────────────────────────────────────────────
+backend-node/uploads/
+
+# ── OS / editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/settings.json
