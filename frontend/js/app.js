@@ -1,5 +1,5 @@
-import { initRouter, route, navigate } from './router.js'
-import { initLayout } from './components/layout.js'
+import { initRouter, route, navigate, onNavigate } from './router.js'
+import { initLayout, renderHeader } from './components/layout.js'
 import { loadUser, isAuthenticated } from './auth.js'
 import { renderHome } from './pages/home.js'
 import { renderLogin } from './pages/login.js'
@@ -42,9 +42,9 @@ async function init() {
   // Load user from stored token before rendering
   await loadUser()
   initLayout()
+  // Re-render header on each navigation to update active links
+  onNavigate(() => renderHeader())
   initRouter()
-  // Re-render header on navigation to update active links
-  window.addEventListener('popstate', () => initLayout())
 }
 
 init()

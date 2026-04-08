@@ -6,7 +6,7 @@ A full-stack recipe sharing platform. Users can publish recipes, follow chefs, l
 
 ## Project Structure
 
-`
+```
 RecipeNest/
 ├── frontend/           # Plain HTML/CSS/JS SPA - no build step needed
 │   ├── index.html
@@ -21,21 +21,18 @@ RecipeNest/
 │   │   └── pages/      # 13 page modules
 │   └── public/
 │
-├── backend-node/       # Node.js, Express, MongoDB, Multer
-│   ├── .env.example
-│   ├── package.json
-│   └── src/
-│       ├── server.js
-│       ├── app.js
-│       ├── config/     # db.js (Mongoose)
-│       ├── models/     # User, Recipe, Review, Like, Favorite, Follow, Notification, ModerationLog
-│       ├── routes/     # auth, users, recipes, reviews, chefs, notifications, admin
-│       └── middleware/ # auth.js, upload.js (Multer), errorHandler.js
-│
-└── backend-csharp/     # ASP.NET Core 10, C#, SQLite, EF Core
-    ├── RecipeNest.Api/
-    └── RecipeNest.Api.Tests/
-`
+└── backend/            # Node.js, Express, MongoDB, Multer
+    ├── .env.example
+    ├── package.json
+    └── src/
+        ├── server.js
+        ├── app.js
+        ├── config/     # db.js (Mongoose)
+        ├── models/     # User, Recipe, Review, Like, Favorite, Follow, Notification, ModerationLog
+        ├── routes/     # auth, users, recipes, reviews, chefs, notifications, admin
+        ├── middleware/ # auth.js, upload.js (Multer), errorHandler.js
+        └── scripts/    # createAdmin.js
+```
 
 ---
 
@@ -44,73 +41,81 @@ RecipeNest/
 | Layer | Technology |
 |---|---|
 | Frontend | HTML, CSS, JavaScript (ES modules, no framework) |
-| Node backend | Node.js, Express, MongoDB (Mongoose), Multer, JWT |
-| C# backend | ASP.NET Core 10, Entity Framework Core, SQLite, JWT |
+| Backend | Node.js, Express, MongoDB (Mongoose), Multer, JWT |
 
 ---
 
 ## Getting Started
 
-### Frontend
+### 1. Backend
 
-No build step. Serve the frontend/ folder with any static file server:
+Requires Node.js 18+ and MongoDB running locally.
 
-    python -m http.server 3000 --directory frontend
-    npx serve frontend
+```powershell
+cd backend
+cp .env.example .env   # then fill in JWT_SECRET
+npm install
+npm run dev
+```
 
-The API base URL defaults to http://localhost:5200/api. Change it in frontend/js/api.js.
+API runs at `http://localhost:5200`.
 
----
-
-### Node.js Backend
-
-Requires Node.js 18+ and MongoDB.
-
-    cd backend-node
-    cp .env.example .env
-    npm install
-    npm run dev
-
-.env variables:
+**.env variables:**
 
 | Variable | Default | Description |
 |---|---|---|
-| PORT | 5200 | Port |
-| MONGODB_URI | mongodb://localhost:27017/recipenest | MongoDB connection |
-| JWT_SECRET | - | Required |
+| PORT | 5200 | Server port |
+| MONGODB_URI | mongodb://localhost:27017/recipenest | MongoDB connection string |
+| JWT_SECRET | - | Required — use a long random string |
 | JWT_EXPIRES_IN | 7d | Token lifetime |
-| UPLOAD_DIR | uploads | Upload directory |
-| CORS_ORIGINS | http://localhost:3000,http://localhost:5173 | Allowed origins |
+| UPLOAD_DIR | uploads | Directory for uploaded files |
+| CORS_ORIGINS | http://localhost:3000,http://localhost:5173 | Comma-separated allowed origins |
 
----
+### 2. Frontend
 
-### C# Backend
+No build step needed. Serve the `frontend/` folder with any static file server:
 
-Requires .NET 10 SDK.
+```powershell
+npx serve frontend
+```
 
-    cd backend-csharp/RecipeNest.Api
-    dotnet run
+Opens at `http://localhost:3000`. The API base URL defaults to `http://localhost:5200/api` — change it in `frontend/js/api.js` if needed.
 
-Swagger UI at /swagger in development. Run tests:
+### 3. Create Admin User
 
-    cd backend-csharp
-    dotnet test
+After the backend is running, seed the first admin account:
+
+```powershell
+cd backend
+node src/scripts/createAdmin.js
+```
+
+Default admin credentials:
+
+| Field | Value |
+|---|---|
+| Email | admin@recipenest.com |
+| Password | Admin@1234 |
+
+> If login fails after running the script, restart the backend to reset the in-memory rate limiter.
 
 ---
 
 ## API Reference
 
-Both backends expose identical routes:
-
 | Method | Route | Auth | Description |
 |---|---|---|---|
 | POST | /api/auth/register | | Register |
 | POST | /api/auth/login | | Login, returns JWT |
-| GET | /api/recipes | | List recipes (paginated, searchable) |
+| GET | /api/recipes | | List recipes (paginated, filterable) |
+| GET | /api/recipes/search | | Search recipes |
+| GET | /api/recipes/filter | | Filter by category / difficulty |
 | GET | /api/recipes/:id | | Get recipe |
 | POST | /api/recipes | yes | Create recipe |
 | PUT | /api/recipes/:id | yes | Update recipe |
 | DELETE | /api/recipes/:id | yes | Delete recipe |
+| POST | /api/recipes/:id/image | yes | Upload recipe image |
+| GET | /api/recipes/:id/status | yes | Get like/favorite state for current user |
 | POST | /api/recipes/:id/like | yes | Like |
 | DELETE | /api/recipes/:id/like | yes | Unlike |
 | POST | /api/recipes/:id/favorite | yes | Favourite |
@@ -139,13 +144,13 @@ Both backends expose identical routes:
 
 ---
 
-## File Uploads (Node backend)
+## File Uploads
 
-Multer saves files to uploads/, served at /uploads/<filename>.
+Multer saves files to `uploads/`, served statically at `/uploads/<filename>`.
 
 | Type | Route | Limit |
 |---|---|---|
 | Profile photo | POST /api/users/:id/photo | 5 MB |
-| Recipe image | (extend recipe routes) | 10 MB |
+| Recipe image | POST /api/recipes/:id/image | 10 MB |
 
-Accepted: jpg, jpeg, png, gif, webp.
+Accepted formats: jpg, jpeg, png, gif, webp.

@@ -1,4 +1,8 @@
-const BASE_URL = 'http://localhost:5200/api'
+// Allow overriding the API base URL via a global set by the server or a build step.
+// In development, falls back to localhost:5200.
+const BASE_URL = (typeof window !== 'undefined' && window.__API_BASE_URL__)
+  || import.meta?.env?.VITE_API_BASE_URL
+  || `http://${window.location.hostname}:5200/api`
 
 function getToken() { return localStorage.getItem('token') }
 
@@ -15,7 +19,14 @@ async function request(method, path, body, params) {
       : headers,
     body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   })
-  if (res.status === 401) { localStorage.removeItem('token') }
+  if (res.status === 401) {
+    localStorage.removeItem('token')
+    // Only redirect if NOT on the login page itself
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login'
+      return // stop processing
+    }
+  }
   if (!res.ok) {
     let err
     try { err = await res.json() } catch { err = {} }
@@ -39,9 +50,14 @@ export const authApi = {
 export const recipesApi = {
   getAll: (params) => get('/recipes', params),
   getById: (id) => get(`/recipes/${id}`),
+  getStatus: (id) => get(`/recipes/${id}/status`),
   create: (data) => post('/recipes', data),
   update: (id, data) => put(`/recipes/${id}`, data),
   delete: (id) => del(`/recipes/${id}`),
+  uploadImage: (id, file) => {
+    const fd = new FormData(); fd.append('file', file)
+    return request('POST', `/recipes/${id}/image`, fd)
+  },
   like: (id) => post(`/recipes/${id}/like`),
   unlike: (id) => del(`/recipes/${id}/like`),
   favorite: (id) => post(`/recipes/${id}/favorite`),
@@ -64,11 +80,13 @@ export const usersApi = {
 export const chefsApi = {
   getAll: (sortBy) => get('/chefs', { sortBy }),
   getById: (id) => get(`/chefs/${id}`),
+  getFollowStatus: (id) => get(`/chefs/${id}/follow-status`),
   follow: (id) => post(`/chefs/${id}/follow`),
   unfollow: (id) => del(`/chefs/${id}/follow`),
 }
 
 export const reviewsApi = {
+  update: (id, data) => put(`/reviews/${id}`, data),
   delete: (id) => del(`/reviews/${id}`),
 }
 

@@ -1,5 +1,8 @@
 const routes = []
 let currentCleanup = null
+let onNavigateHook = null
+
+export function onNavigate(fn) { onNavigateHook = fn }
 
 export function route(pattern, handler) {
   routes.push({ pattern: new RegExp('^' + pattern.replace(/:([^/]+)/g, '([^/]+)') + '$'), handler, raw: pattern })
@@ -38,6 +41,7 @@ function render(path) {
   } else {
     main.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><h2 class="empty-title">Page not found</h2><p class="empty-desc">The page you're looking for doesn't exist.</p><a href="/" class="btn btn-primary" onclick="event.preventDefault();navigate('/')">Go Home</a></div>`
   }
+  if (onNavigateHook) onNavigateHook(path)
   window.scrollTo(0, 0)
 }
 

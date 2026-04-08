@@ -1,0 +1,13 @@
+import mongoose from 'mongoose'
+
+const notificationSchema = new mongoose.Schema({
+  user:            { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  message:         { type: String, required: true },
+  isRead:          { type: Boolean, default: false },
+  relatedRecipeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Recipe', default: null },
+  relatedUserId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+}, { timestamps: true })
+
+notificationSchema.index({ user: 1, createdAt: -1 })
+
+export default mongoose.model('Notification', notificationSchema)

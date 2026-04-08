@@ -16,7 +16,17 @@ const app = express()
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173')
   .split(',').map(s => s.trim())
 
-app.use(cors({ origin: allowedOrigins, credentials: true }))
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow requests with no origin (curl, Postman, mobile apps)
+    if (!origin) return cb(null, true)
+    // Allow any localhost or local network origin
+    if (/^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin)) return cb(null, true)
+    if (allowedOrigins.includes(origin)) return cb(null, true)
+    cb(new Error(`CORS: origin ${origin} not allowed`))
+  },
+  credentials: true,
+}))
 
 // Body parsing
 app.use(express.json())
