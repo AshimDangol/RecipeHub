@@ -99,6 +99,8 @@ export const notificationsApi = {
 
 export const adminApi = {
   getStatistics: () => get('/admin/statistics'),
+  getFlagged: () => get('/admin/flagged'),
+  getContent: (params) => get('/admin/content', params),
   flagRecipe: (id, reason) => post(`/admin/recipes/${id}/flag`, { reason }),
   flagReview: (id, reason) => post(`/admin/reviews/${id}/flag`, { reason }),
   restoreContent: (id, contentType) => put(`/admin/content/${id}/restore`, null, { contentType }),

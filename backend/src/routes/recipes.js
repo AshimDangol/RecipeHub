@@ -4,7 +4,7 @@ import Review from '../models/Review.js'
 import Like from '../models/Like.js'
 import Favorite from '../models/Favorite.js'
 import Notification from '../models/Notification.js'
-import { authenticate } from '../middleware/auth.js'
+import { authenticate, requireAdmin } from '../middleware/auth.js'
 import { uploadRecipeImage } from '../middleware/upload.js'
 
 const router = Router()
@@ -92,9 +92,24 @@ router.get('/filter', async (req, res, next) => {
 // GET /api/recipes/:id
 router.get('/:id', async (req, res, next) => {
   try {
-    const recipe = await Recipe.findOne({ _id: req.params.id, isFlagged: false }).populate('author').catch(() => null)
+    const recipe = await Recipe.findById(req.params.id).populate('author').catch(() => null)
     if (!recipe) return res.status(404).json({ error: { code: 'RECIPE_NOT_FOUND', message: 'Recipe not found' } })
-    res.json(recipeToDTO(recipe))
+
+    // Flagged recipes are only visible to admins and the owner
+    if (recipe.isFlagged) {
+      const token = req.headers.authorization?.slice(7)
+      let user = null
+      if (token) {
+        try { user = (await import('jsonwebtoken')).default.verify(token, process.env.JWT_SECRET) } catch {}
+      }
+      const isOwner = user?.sub?.toString() === recipe.author._id?.toString()
+      const isAdmin = user?.isAdmin
+      if (!isOwner && !isAdmin) {
+        return res.status(404).json({ error: { code: 'RECIPE_NOT_FOUND', message: 'Recipe not found' } })
+      }
+    }
+
+    res.json({ ...recipeToDTO(recipe), isFlagged: recipe.isFlagged })
   } catch (err) { next(err) }
 })
 

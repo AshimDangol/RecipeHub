@@ -28,15 +28,31 @@ export function renderRecipeDetail({ id }, container) {
   }
 
   function render() {
+    const currentUser = getUser()
+    const isOwner = currentUser?.id?.toString() === recipe.author?.id?.toString()
+
     container.innerHTML = `
       <div class="space-y" style="max-width:896px;margin:0 auto">
+        ${recipe.isFlagged ? `
+          <div class="alert alert-error" style="display:flex;align-items:center;gap:.75rem">
+            🚩 <span>This recipe has been <strong>flagged by a moderator</strong> and is hidden from other users.</span>
+          </div>
+        ` : ''}
         <div class="recipe-hero">
           ${recipe.imageUrl ? `<img src="${recipe.imageUrl}" alt="${recipe.title}">` : '🍽️'}
         </div>
         <div>
-          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.75rem">
-            <span class="text-brand text-sm font-semibold" style="text-transform:uppercase;letter-spacing:.05em">${recipe.category}</span>
-            <span class="badge ${diffColor[recipe.difficulty] ?? ''}">${recipe.difficulty}</span>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem">
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span class="text-brand text-sm font-semibold" style="text-transform:uppercase;letter-spacing:.05em">${recipe.category}</span>
+              <span class="badge ${diffColor[recipe.difficulty] ?? ''}">${recipe.difficulty}</span>
+            </div>
+            ${isOwner ? `
+              <div style="display:flex;gap:.5rem">
+                <a href="/recipes/edit/${recipe.id}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+                <button id="delete-recipe-btn" class="btn btn-danger btn-sm">🗑 Delete</button>
+              </div>
+            ` : ''}
           </div>
           <h1 style="font-size:2.25rem;font-weight:700;margin-bottom:1rem">${recipe.title}</h1>
           ${recipe.description ? `<p style="color:var(--text-muted);font-size:1.0625rem;line-height:1.7;margin-bottom:1.5rem">${recipe.description}</p>` : ''}
@@ -77,6 +93,19 @@ export function renderRecipeDetail({ id }, container) {
   }
 
   function bindActions() {
+    document.getElementById('delete-recipe-btn')?.addEventListener('click', async () => {
+      if (!confirm('Delete this recipe? This cannot be undone.')) return
+      const btn = document.getElementById('delete-recipe-btn')
+      btn.disabled = true; btn.textContent = 'Deleting...'
+      try {
+        await recipesApi.delete(recipe.id)
+        showToast('Recipe deleted', 'info')
+        navigate('/recipes')
+      } catch {
+        showToast('Failed to delete recipe', 'error')
+        btn.disabled = false; btn.textContent = '🗑 Delete'
+      }
+    })
     document.getElementById('like-btn')?.addEventListener('click', async () => {
       if (!isAuthenticated()) { navigate('/login'); return }
       likeLoading = true; render()

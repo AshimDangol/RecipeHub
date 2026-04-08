@@ -8,6 +8,23 @@ export function renderRecipeForm({ recipeId } = {}, container) {
 
   let ingredients = [{ name: '', quantity: '' }]
   let instructions = [{ stepText: '' }]
+  let existing = null
+
+  // Load existing recipe data if editing
+  async function init() {
+    if (recipeId) {
+      try {
+        const r = await recipesApi.getById(recipeId)
+        existing = r.data
+        ingredients = existing.ingredients.map(i => ({ name: i.name, quantity: i.quantity }))
+        instructions = existing.instructions.map(i => ({ stepText: i.stepText }))
+      } catch {
+        showToast('Failed to load recipe', 'error')
+        navigate('/recipes'); return
+      }
+    }
+    render()
+  }
 
   function render(err = '', loading = false) {
     container.innerHTML = `
@@ -20,19 +37,19 @@ export function renderRecipeForm({ recipeId } = {}, container) {
         <form id="recipe-form" class="space-y">
           <div class="card card-body space-y-sm">
             <h2 class="text-xs font-semibold text-muted" style="text-transform:uppercase;letter-spacing:.05em">Basic Info</h2>
-            <div class="form-group"><label class="form-label">Title</label><input id="rf-title" type="text" class="form-input" required minlength="3" placeholder="e.g. Spaghetti Carbonara"></div>
-            <div class="form-group"><label class="form-label">Description</label><textarea id="rf-desc" class="form-textarea" rows="3" placeholder="Describe your recipe..."></textarea></div>
+            <div class="form-group"><label class="form-label">Title</label><input id="rf-title" type="text" class="form-input" required minlength="3" placeholder="e.g. Spaghetti Carbonara" value="${existing?.title ?? ''}"></div>
+            <div class="form-group"><label class="form-label">Description</label><textarea id="rf-desc" class="form-textarea" rows="3" placeholder="Describe your recipe...">${existing?.description ?? ''}</textarea></div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
-              <div class="form-group"><label class="form-label">Category</label><input id="rf-cat" type="text" class="form-input" required placeholder="e.g. Dinner"></div>
+              <div class="form-group"><label class="form-label">Category</label><input id="rf-cat" type="text" class="form-input" required placeholder="e.g. Dinner" value="${existing?.category ?? ''}"></div>
               <div class="form-group"><label class="form-label">Difficulty</label>
                 <select id="rf-diff" class="form-select" required>
                   <option value="">Select</option>
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
+                  <option value="Easy" ${existing?.difficulty === 'Easy' ? 'selected' : ''}>Easy</option>
+                  <option value="Medium" ${existing?.difficulty === 'Medium' ? 'selected' : ''}>Medium</option>
+                  <option value="Hard" ${existing?.difficulty === 'Hard' ? 'selected' : ''}>Hard</option>
                 </select>
               </div>
-              <div class="form-group"><label class="form-label">Prep Time (min)</label><input id="rf-time" type="number" class="form-input" required min="1" placeholder="30"></div>
+              <div class="form-group"><label class="form-label">Prep Time (min)</label><input id="rf-time" type="number" class="form-input" required min="1" placeholder="30" value="${existing?.preparationTimeMinutes ?? ''}"></div>
             </div>
           </div>
           <div class="card card-body space-y-sm">
@@ -117,5 +134,5 @@ export function renderRecipeForm({ recipeId } = {}, container) {
     })
   }
 
-  render()
+  init()
 }

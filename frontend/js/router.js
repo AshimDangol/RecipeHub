@@ -23,7 +23,12 @@ function matchRoute(path) {
 
 export function navigate(path) {
   if (path === -1) { history.back(); return }
-  history.pushState(null, '', path)
+  // If same path, replace state and force re-render (acts as a refresh)
+  if (location.pathname === path) {
+    history.replaceState(null, '', path)
+  } else {
+    history.pushState(null, '', path)
+  }
   render(path)
 }
 

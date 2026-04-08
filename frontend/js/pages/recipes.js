@@ -3,8 +3,13 @@ import { isAuthenticated } from '../auth.js'
 import { navigate } from '../router.js'
 import { recipeCardHTML } from '../components/recipe-card.js'
 
+const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Soup', 'Salad', 'Drinks']
+const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard']
+
 export function renderRecipes(params, container) {
-  let page = 1, totalPages = 1, searchInput = '', searchTerm = '', debounceTimer = null
+  let page = 1, totalPages = 1
+  let searchInput = '', searchTerm = '', debounceTimer = null
+  let activeCategory = 'All', activeDifficulty = 'All'
 
   container.innerHTML = `
     <div class="space-y">
@@ -19,16 +24,43 @@ export function renderRecipes(params, container) {
         <span class="search-icon">🔍</span>
         <input id="recipe-search" type="search" class="form-input search-input" placeholder="Search recipes by title or ingredient…" aria-label="Search recipes" />
       </div>
+      <div>
+        <p class="text-xs text-muted" style="margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600">Category</p>
+        <div class="sort-btns" style="flex-wrap:wrap" id="category-btns">
+          ${CATEGORIES.map(c => `<button class="sort-btn ${c === 'All' ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('')}
+        </div>
+      </div>
+      <div>
+        <p class="text-xs text-muted" style="margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600">Difficulty</p>
+        <div class="sort-btns" id="difficulty-btns">
+          ${DIFFICULTIES.map(d => `<button class="sort-btn ${d === 'All' ? 'active' : ''}" data-diff="${d}">${d}</button>`).join('')}
+        </div>
+      </div>
       <div id="recipes-grid"></div>
       <div id="recipes-pagination" class="pagination"></div>
     </div>
   `
 
-  const searchEl = document.getElementById('recipe-search')
-  searchEl.addEventListener('input', () => {
-    searchInput = searchEl.value
+  document.getElementById('recipe-search').addEventListener('input', (e) => {
+    searchInput = e.target.value
     clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => { searchTerm = searchInput; page = 1; fetchRecipes() }, 400)
+  })
+
+  document.getElementById('category-btns').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-cat]')
+    if (!btn) return
+    activeCategory = btn.dataset.cat
+    document.querySelectorAll('#category-btns .sort-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === activeCategory))
+    page = 1; fetchRecipes()
+  })
+
+  document.getElementById('difficulty-btns').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-diff]')
+    if (!btn) return
+    activeDifficulty = btn.dataset.diff
+    document.querySelectorAll('#difficulty-btns .sort-btn').forEach(b => b.classList.toggle('active', b.dataset.diff === activeDifficulty))
+    page = 1; fetchRecipes()
   })
 
   async function fetchRecipes() {
@@ -38,12 +70,15 @@ export function renderRecipes(params, container) {
     try {
       const p = { page, pageSize: 12 }
       if (searchTerm) p.searchTerm = searchTerm
+      if (activeCategory !== 'All') p.category = activeCategory
+      if (activeDifficulty !== 'All') p.difficulty = activeDifficulty
+
       const r = await recipesApi.getAll(p)
       const recipes = r.data.data ?? []
       totalPages = r.data.meta?.totalPages ?? 1
 
       if (recipes.length === 0) {
-        grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🍽️</div><h3 class="empty-title">${searchTerm ? `No recipes found for "${searchTerm}"` : 'No recipes yet'}</h3><p class="empty-desc">${searchTerm ? 'Try a different search term.' : 'Be the first to share a recipe!'}</p>${isAuthenticated() && !searchTerm ? `<a href="/recipes/create" class="btn btn-primary">Create Recipe</a>` : ''}</div>`
+        grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🍽️</div><h3 class="empty-title">No recipes found</h3><p class="empty-desc">Try adjusting your filters or search term.</p>${isAuthenticated() ? `<a href="/recipes/create" class="btn btn-primary mt-4">Create Recipe</a>` : ''}</div>`
       } else {
         grid.innerHTML = `<div class="grid-3">${recipes.map(r => recipeCardHTML(r)).join('')}</div>`
       }
