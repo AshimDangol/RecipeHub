@@ -112,17 +112,17 @@ export function renderRecipeForm({ recipeId } = {}, container) {
     document.getElementById('add-step')?.addEventListener('click', () => { instructions.push({ stepText: '' }); renderInstructions() })
     document.getElementById('recipe-form')?.addEventListener('submit', async (e) => {
       e.preventDefault()
+      const body = {
+        title: document.getElementById('rf-title').value,
+        description: document.getElementById('rf-desc').value,
+        category: document.getElementById('rf-cat').value,
+        difficulty: document.getElementById('rf-diff').value,
+        preparationTimeMinutes: parseInt(document.getElementById('rf-time').value),
+        ingredients: ingredients.map((ing, i) => ({ ...ing, orderIndex: i })),
+        instructions: instructions.map((inst, i) => ({ ...inst, orderIndex: i })),
+      }
       render('', true)
       try {
-        const body = {
-          title: document.getElementById('rf-title').value,
-          description: document.getElementById('rf-desc').value,
-          category: document.getElementById('rf-cat').value,
-          difficulty: document.getElementById('rf-diff').value,
-          preparationTimeMinutes: parseInt(document.getElementById('rf-time').value),
-          ingredients: ingredients.map((ing, i) => ({ ...ing, orderIndex: i })),
-          instructions: instructions.map((inst, i) => ({ ...inst, orderIndex: i })),
-        }
         if (recipeId) await recipesApi.update(recipeId, body)
         else await recipesApi.create(body)
         showToast(recipeId ? 'Recipe updated!' : 'Recipe created!', 'success')
