@@ -1,6 +1,6 @@
 import { getUser, isAuthenticated, logout, onAuthChange } from '../auth.js'
 import { navigate, getPath } from '../router.js'
-import { notificationsApi } from '../api.js'
+import { notificationsApi, mediaUrl } from '../api.js'
 import { showToast } from '../toast.js'
 
 let bellInterval = null
@@ -42,7 +42,7 @@ function renderHeader() {
         ${auth && user ? `
           <div class="bell-wrap" id="bell-wrap"></div>
           <a href="/profile/${user.id}" class="nav-user">
-            <div class="nav-avatar">${user.profilePhotoUrl ? `<img src="${user.profilePhotoUrl}" alt="${user.displayName}">` : user.displayName.charAt(0).toUpperCase()}</div>
+            <div class="nav-avatar">${user.profilePhotoUrl ? `<img src="${mediaUrl(user.profilePhotoUrl)}" alt="${user.displayName}">` : user.displayName.charAt(0).toUpperCase()}</div>
             <span class="text-sm font-semibold">${user.displayName}</span>
           </a>
           <a href="/recipes/create" class="btn btn-primary btn-sm">+ New Recipe</a>
@@ -99,7 +99,7 @@ function renderFooter() {
         <a href="/chefs">Chefs</a>
         <a href="/register">Join</a>
       </div>
-      <p class="footer-copy">© 2026 RecipeNest. All rights reserved.</p>
+
     </div>
   `
 }

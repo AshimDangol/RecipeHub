@@ -1,5 +1,6 @@
 import { recipesApi } from '../api.js'
-import { isAuthenticated, getToken } from '../auth.js'
+import { mediaUrl } from '../api.js'
+import { isAuthenticated } from '../auth.js'
 import { navigate } from '../router.js'
 import { showToast } from '../toast.js'
 
@@ -9,6 +10,7 @@ export function renderRecipeForm({ recipeId } = {}, container) {
   let ingredients = [{ name: '', quantity: '' }]
   let instructions = [{ stepText: '' }]
   let existing = null
+  let photoFile = null
 
   // Load existing recipe data if editing
   async function init() {
@@ -50,6 +52,17 @@ export function renderRecipeForm({ recipeId } = {}, container) {
                 </select>
               </div>
               <div class="form-group"><label class="form-label">Prep Time (min)</label><input id="rf-time" type="number" class="form-input" required min="1" placeholder="30" value="${existing?.preparationTimeMinutes ?? ''}"></div>
+            </div>
+          </div>
+          <div class="card card-body space-y-sm">
+            <h2 class="text-xs font-semibold text-muted" style="text-transform:uppercase;letter-spacing:.05em">Photo</h2>
+            <div class="form-group">
+              <label class="form-label">Recipe Photo</label>
+              <div id="photo-preview-wrap" style="margin-bottom:.75rem;display:${existing?.imageUrl ? 'block' : 'none'}">
+                <img id="photo-preview" src="${mediaUrl(existing?.imageUrl) ?? ''}" alt="Preview" style="max-height:200px;border-radius:.5rem;object-fit:cover;max-width:100%">
+              </div>
+              <input id="rf-photo" type="file" accept="image/*" class="form-input" style="padding:.375rem">
+              <p class="text-muted" style="font-size:.8rem;margin-top:.25rem">Max 10 MB. JPG, PNG, GIF or WebP.</p>
             </div>
           </div>
           <div class="card card-body space-y-sm">
@@ -110,6 +123,15 @@ export function renderRecipeForm({ recipeId } = {}, container) {
   function bindEvents() {
     document.getElementById('add-ingredient')?.addEventListener('click', () => { ingredients.push({ name: '', quantity: '' }); renderIngredients() })
     document.getElementById('add-step')?.addEventListener('click', () => { instructions.push({ stepText: '' }); renderInstructions() })
+    document.getElementById('rf-photo')?.addEventListener('change', (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      photoFile = file
+      const wrap = document.getElementById('photo-preview-wrap')
+      const img = document.getElementById('photo-preview')
+      img.src = URL.createObjectURL(file)
+      wrap.style.display = 'block'
+    })
     document.getElementById('recipe-form')?.addEventListener('submit', async (e) => {
       e.preventDefault()
       const body = {
@@ -123,8 +145,13 @@ export function renderRecipeForm({ recipeId } = {}, container) {
       }
       render('', true)
       try {
-        if (recipeId) await recipesApi.update(recipeId, body)
-        else await recipesApi.create(body)
+        let saved
+        if (recipeId) saved = await recipesApi.update(recipeId, body)
+        else saved = await recipesApi.create(body)
+        if (photoFile) {
+          const id = saved?.data?._id ?? saved?.data?.id ?? recipeId
+          try { await recipesApi.uploadImage(id, photoFile) } catch { showToast('Recipe saved but photo upload failed', 'warning') }
+        }
         showToast(recipeId ? 'Recipe updated!' : 'Recipe created!', 'success')
         navigate('/recipes')
       } catch (err) {

@@ -1,4 +1,4 @@
-import { chefsApi } from '../api.js'
+import { chefsApi, mediaUrl } from '../api.js'
 import { isAuthenticated, getUser } from '../auth.js'
 import { navigate } from '../router.js'
 import { showToast } from '../toast.js'
@@ -27,7 +27,7 @@ export function renderChefDetail({ id }, container) {
               <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
                 <div style="display:flex;align-items:center;gap:1.5rem">
                   <div class="profile-avatar">
-                    ${chef.profilePhotoUrl ? `<img src="${chef.profilePhotoUrl}" alt="${chef.displayName}">` : chef.displayName.charAt(0).toUpperCase()}
+                    ${chef.profilePhotoUrl ? `<img src="${mediaUrl(chef.profilePhotoUrl)}" alt="${chef.displayName}">` : chef.displayName.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h1 class="profile-name">${chef.displayName}</h1>

@@ -1,4 +1,4 @@
-import { chefsApi, usersApi } from '../api.js'
+import { chefsApi, usersApi, mediaUrl } from '../api.js'
 import { getUser, isAuthenticated } from '../auth.js'
 import { recipeCardHTML } from '../components/recipe-card.js'
 
@@ -51,7 +51,7 @@ export function renderProfile({ id }, container) {
           <div class="profile-header">
             <div class="profile-info">
               <div class="profile-avatar">
-                ${profile.profilePhotoUrl ? `<img src="${profile.profilePhotoUrl}" alt="${profile.displayName}">` : profile.displayName.charAt(0).toUpperCase()}
+                ${profile.profilePhotoUrl ? `<img src="${mediaUrl(profile.profilePhotoUrl)}" alt="${profile.displayName}">` : profile.displayName.charAt(0).toUpperCase()}
               </div>
               <div>
                 <h1 class="profile-name">${profile.displayName}</h1>
@@ -102,7 +102,7 @@ export function renderProfile({ id }, container) {
       el.innerHTML = following.length > 0 ? `<div class="grid-3">${following.map(c => `
         <a href="/chefs/${c.id}" class="card card-body chef-card">
           <div class="chef-card-inner">
-            <div class="chef-avatar">${c.profilePhotoUrl ? `<img src="${c.profilePhotoUrl}" alt="${c.displayName}">` : c.displayName.charAt(0).toUpperCase()}</div>
+            <div class="chef-avatar">${c.profilePhotoUrl ? `<img src="${mediaUrl(c.profilePhotoUrl)}" alt="${c.displayName}">` : c.displayName.charAt(0).toUpperCase()}</div>
             <div><div class="chef-name">${c.displayName}</div><div class="chef-meta">${c.recipeCount ?? 0} recipes · ${c.followerCount ?? 0} followers</div></div>
           </div>
         </a>

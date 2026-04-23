@@ -6,7 +6,6 @@ const features = [
   { icon: '👨‍🍳', title: 'Follow Chefs', desc: 'Stay inspired by following your favorite chefs and their latest recipes.' },
   { icon: '❤️', title: 'Save Favorites', desc: 'Bookmark recipes you love and build your personal cookbook.' },
 ]
-const categories = ['Breakfast', 'Lunch', 'Dinner', 'Desserts', 'Snacks', 'Drinks']
 
 export function renderHome(params, container) {
   const auth = isAuthenticated()
@@ -34,18 +33,6 @@ export function renderHome(params, container) {
               <h3 class="feature-title">${f.title}</h3>
               <p class="feature-desc">${f.desc}</p>
             </div>
-          `).join('')}
-        </div>
-      </section>
-
-      <section>
-        <div style="text-align:center;margin-bottom:2rem">
-          <h2 class="font-bold" style="font-size:1.875rem;margin-bottom:.75rem">Browse by Category</h2>
-          <p class="text-muted">Find exactly what you're craving.</p>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center">
-          ${categories.map(cat => `
-            <a href="/recipes?category=${cat.toLowerCase()}" class="btn btn-secondary">${cat}</a>
           `).join('')}
         </div>
       </section>

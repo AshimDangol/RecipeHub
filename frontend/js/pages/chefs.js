@@ -1,4 +1,4 @@
-import { chefsApi } from '../api.js'
+import { chefsApi, mediaUrl } from '../api.js'
 import { isAuthenticated, getUser } from '../auth.js'
 import { navigate } from '../router.js'
 import { showToast } from '../toast.js'
@@ -43,7 +43,7 @@ export function renderChefs(params, container) {
     return `
       <a href="/chefs/${c.id}" class="card card-body chef-card">
         <div class="chef-card-inner">
-          <div class="chef-avatar">${c.profilePhotoUrl ? `<img src="${c.profilePhotoUrl}" alt="${c.displayName}" loading="lazy">` : c.displayName.charAt(0).toUpperCase()}</div>
+          <div class="chef-avatar">${c.profilePhotoUrl ? `<img src="${mediaUrl(c.profilePhotoUrl)}" alt="${c.displayName}" loading="lazy">` : c.displayName.charAt(0).toUpperCase()}</div>
           <div>
             <div class="chef-name">${c.displayName}</div>
             <div class="chef-meta">${c.recipeCount} recipes · <span id="fc-${c.id}">${c.followerCount}</span> followers</div>

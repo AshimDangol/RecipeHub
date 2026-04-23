@@ -1,4 +1,4 @@
-import { usersApi } from '../api.js'
+import { usersApi, mediaUrl } from '../api.js'
 import { getUser, isAuthenticated, refreshUser } from '../auth.js'
 import { navigate } from '../router.js'
 import { showToast } from '../toast.js'
@@ -27,7 +27,7 @@ export function renderProfileEdit(params, container) {
           <div style="display:flex;align-items:center;gap:1.25rem;margin-top:.5rem">
             <div class="profile-avatar" style="width:80px;height:80px;font-size:2rem" id="avatar-wrap">
               ${user.profilePhotoUrl
-                ? `<img src="${user.profilePhotoUrl}" alt="Preview" id="photo-preview">`
+                ? `<img src="${mediaUrl(user.profilePhotoUrl)}" alt="Preview" id="photo-preview">`
                 : user.displayName.charAt(0).toUpperCase()}
             </div>
             <div>

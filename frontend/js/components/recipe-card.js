@@ -1,10 +1,13 @@
+import { mediaUrl } from '../api.js'
+
 const diffBadge = { Easy: 'badge-easy', Medium: 'badge-medium', Hard: 'badge-hard' }
 
 export function recipeCardHTML(r) {
+  const img = mediaUrl(r.imageUrl)
   return `
     <a href="/recipes/${r.id}" class="card recipe-card">
       <div class="recipe-card-img">
-        ${r.imageUrl ? `<img src="${r.imageUrl}" alt="${r.title}" loading="lazy">` : '🍽️'}
+        ${img ? `<img src="${img}" alt="${r.title}" loading="lazy">` : '🍽️'}
         <span class="recipe-card-badge badge ${diffBadge[r.difficulty] ?? ''}">${r.difficulty}</span>
       </div>
       <div class="recipe-card-body">

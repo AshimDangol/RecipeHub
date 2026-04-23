@@ -4,6 +4,15 @@ const BASE_URL = (typeof window !== 'undefined' && window.__API_BASE_URL__)
   || import.meta?.env?.VITE_API_BASE_URL
   || `http://${window.location.hostname}:5200/api`
 
+const MEDIA_BASE = BASE_URL.replace(/\/api$/, '')
+
+/** Resolve a stored image path (e.g. /uploads/foo.jpg) to a full URL */
+export function mediaUrl(path) {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return MEDIA_BASE + path
+}
+
 function getToken() { return localStorage.getItem('token') }
 
 async function request(method, path, body, params) {

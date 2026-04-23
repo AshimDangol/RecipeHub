@@ -8,17 +8,17 @@ A full-stack recipe sharing platform. Users can publish recipes, follow chefs, l
 
 ```
 RecipeNest/
-├── frontend/               # Plain HTML/CSS/JS SPA - no build step needed
+├── frontend/               # Plain HTML/CSS/JS SPA — no build step needed
 │   ├── index.html
 │   ├── serve.json          # SPA rewrite rules for npx serve
 │   ├── css/styles.css
 │   ├── js/
 │   │   ├── app.js          # Entry point, route registration
-│   │   ├── api.js          # fetch-based API client
+│   │   ├── api.js          # fetch-based API client + mediaUrl() helper
 │   │   ├── auth.js         # JWT state management
 │   │   ├── router.js       # History API SPA router
 │   │   ├── toast.js
-│   │   ├── components/     # layout.js, recipe-card.js
+│   │   ├── components/     # layout.js, recipe-card.js, crop-modal.js
 │   │   └── pages/          # 13 page modules
 │   └── public/
 │
@@ -123,7 +123,8 @@ node src/scripts/seed.js
 - Register / login with JWT auth (password requires 8+ chars, upper, lower, number)
 - Browse, search, and filter recipes by category and difficulty
 - Create, edit, and delete your own recipes with ingredients and step-by-step instructions
-- Upload recipe images and profile photos
+- Upload a photo when creating or editing a recipe (up to 10 MB)
+- Upload and crop a profile photo (up to 5 MB)
 - Like and favourite recipes
 - Follow / unfollow chefs
 - Leave, edit, and delete reviews with star ratings
@@ -189,7 +190,7 @@ Passwords must be at least 8 characters and include an uppercase letter, a lower
 
 ## File Uploads
 
-Multer saves files to `uploads/`, served statically at `/uploads/<filename>`.
+Multer saves files to `uploads/`, served statically at `/uploads/<filename>`. The frontend resolves these paths to full URLs via the `mediaUrl()` helper in `api.js`.
 
 | Type | Route | Limit |
 |---|---|---|

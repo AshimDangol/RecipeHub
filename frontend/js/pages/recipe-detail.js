@@ -1,4 +1,5 @@
 import { recipesApi, reviewsApi } from '../api.js'
+import { mediaUrl } from '../api.js'
 import { isAuthenticated, getUser } from '../auth.js'
 import { navigate } from '../router.js'
 import { showToast } from '../toast.js'
@@ -39,7 +40,7 @@ export function renderRecipeDetail({ id }, container) {
           </div>
         ` : ''}
         <div class="recipe-hero">
-          ${recipe.imageUrl ? `<img src="${recipe.imageUrl}" alt="${recipe.title}">` : '🍽️'}
+          ${recipe.imageUrl ? `<img src="${mediaUrl(recipe.imageUrl)}" alt="${recipe.title}">` : '🍽️'}
         </div>
         <div>
           <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem">
