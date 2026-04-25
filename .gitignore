@@ -6,6 +6,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+backend/.env
 backend-node/.env
 
 # ── Build / generated output ──────────────────────────────────────────────────
@@ -19,6 +20,7 @@ backend/**/*.user
 backend/**/*.suo
 backend/**/.vs/
 backend/**/recipenest.db
+backend/uploads/
 backend/**/uploads/
 
 # ── Node.js uploads ───────────────────────────────────────────────────────────
