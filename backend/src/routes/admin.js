@@ -11,11 +11,30 @@ const router = Router()
 router.use(authenticate, requireAdmin)
 
 // GET /api/admin/flagged  — list all currently flagged content
-router.get('/flagged', async (_req, res, next) => {
+router.get('/flagged', async (req, res, next) => {
   try {
+    const search = (req.query.search || '').trim()
+    let recipeFilter = { isFlagged: true }
+    let reviewFilter = { isFlagged: true }
+
+    if (search) {
+      const matchingAuthors = await User.find(
+        { displayName: { $regex: search, $options: 'i' } }, '_id'
+      )
+      const authorIds = matchingAuthors.map(u => u._id)
+      recipeFilter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        ...(authorIds.length ? [{ author: { $in: authorIds } }] : []),
+      ]
+      reviewFilter.$or = [
+        { comment: { $regex: search, $options: 'i' } },
+        ...(authorIds.length ? [{ author: { $in: authorIds } }] : []),
+      ]
+    }
+
     const [recipes, reviews] = await Promise.all([
-      Recipe.find({ isFlagged: true }).populate('author', 'displayName').sort({ updatedAt: -1 }),
-      Review.find({ isFlagged: true }).populate('author', 'displayName').populate('recipe', 'title').sort({ updatedAt: -1 }),
+      Recipe.find(recipeFilter).populate('author', 'displayName').sort({ updatedAt: -1 }),
+      Review.find(reviewFilter).populate('author', 'displayName').populate('recipe', 'title').sort({ updatedAt: -1 }),
     ])
     res.json({
       recipes: recipes.map(r => ({ id: r._id, title: r.title, author: r.author?.displayName, updatedAt: r.updatedAt })),
@@ -27,15 +46,28 @@ router.get('/flagged', async (_req, res, next) => {
 // GET /api/admin/content  — list all recipes and reviews for flagging
 router.get('/content', async (req, res, next) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const page     = Math.max(1, parseInt(req.query.page) || 1)
     const pageSize = Math.min(50, parseInt(req.query.pageSize) || 20)
-    const skip = (page - 1) * pageSize
-    const type = req.query.type || 'recipe'
-    const search = req.query.search || ''
+    const skip     = (page - 1) * pageSize
+    const type     = req.query.type || 'recipe'
+    const search   = (req.query.search || '').trim()
 
     if (type === 'recipe') {
+      // Build filter: regex on title/description, plus optional author name match
       const filter = { isFlagged: false }
-      if (search) filter.$text = { $search: search }
+      if (search) {
+        // Try to find matching author IDs first
+        const matchingAuthors = await User.find(
+          { displayName: { $regex: search, $options: 'i' } }, '_id'
+        )
+        const authorIds = matchingAuthors.map(u => u._id)
+        filter.$or = [
+          { title:       { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { category:    { $regex: search, $options: 'i' } },
+          ...(authorIds.length ? [{ author: { $in: authorIds } }] : []),
+        ]
+      }
       const [items, totalCount] = await Promise.all([
         Recipe.find(filter).populate('author', 'displayName').sort({ createdAt: -1 }).skip(skip).limit(pageSize),
         Recipe.countDocuments(filter),
@@ -45,7 +77,18 @@ router.get('/content', async (req, res, next) => {
         meta: { totalCount, page, pageSize, totalPages: Math.ceil(totalCount / pageSize) },
       })
     } else {
+      // Reviews: search comment text + author name
       const filter = { isFlagged: false }
+      if (search) {
+        const matchingAuthors = await User.find(
+          { displayName: { $regex: search, $options: 'i' } }, '_id'
+        )
+        const authorIds = matchingAuthors.map(u => u._id)
+        filter.$or = [
+          { comment: { $regex: search, $options: 'i' } },
+          ...(authorIds.length ? [{ author: { $in: authorIds } }] : []),
+        ]
+      }
       const [items, totalCount] = await Promise.all([
         Review.find(filter).populate('author', 'displayName').populate('recipe', 'title').sort({ createdAt: -1 }).skip(skip).limit(pageSize),
         Review.countDocuments(filter),
@@ -138,22 +181,60 @@ router.put('/content/:id/restore', async (req, res, next) => {
 // GET /api/admin/moderation-logs
 router.get('/moderation-logs', async (req, res, next) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const page     = Math.max(1, parseInt(req.query.page) || 1)
     const pageSize = Math.min(100, parseInt(req.query.pageSize) || 20)
-    const skip = (page - 1) * pageSize
+    const skip     = (page - 1) * pageSize
+    const search   = (req.query.search || '').trim()
+
+    const filter = {}
+    if (search) {
+      filter.$or = [
+        { action:      { $regex: search, $options: 'i' } },
+        { contentType: { $regex: search, $options: 'i' } },
+        { reason:      { $regex: search, $options: 'i' } },
+      ]
+    }
 
     const [logs, totalCount] = await Promise.all([
-      ModerationLog.find().populate('admin', 'displayName email').sort({ createdAt: -1 }).skip(skip).limit(pageSize),
-      ModerationLog.countDocuments(),
+      ModerationLog.find(filter)
+        .populate('admin', 'displayName email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize),
+      ModerationLog.countDocuments(filter),
     ])
 
+    // Enrich each log with the content title by fetching Recipe/Review
+    const enriched = await Promise.all(logs.map(async (l) => {
+      let contentTitle = null
+      let contentAuthor = null
+      try {
+        if (l.contentType === 'Recipe') {
+          const r = await Recipe.findById(l.contentId).populate('author', 'displayName').select('title author')
+          contentTitle  = r?.title ?? null
+          contentAuthor = r?.author?.displayName ?? null
+        } else if (l.contentType === 'Review') {
+          const r = await Review.findById(l.contentId).populate('author', 'displayName').populate('recipe', 'title').select('comment author recipe')
+          contentTitle  = r?.recipe?.title ?? null
+          contentAuthor = r?.author?.displayName ?? null
+        }
+      } catch { /* content may have been deleted */ }
+
+      return {
+        id:            l._id,
+        action:        l.action,
+        contentType:   l.contentType,
+        contentId:     l.contentId,
+        contentTitle,
+        contentAuthor,
+        reason:        l.reason || null,
+        admin:         l.admin ? { displayName: l.admin.displayName } : null,
+        createdAt:     l.createdAt,
+      }
+    }))
+
     res.json({
-      data: logs.map(l => ({
-        id: l._id, action: l.action, contentType: l.contentType, contentId: l.contentId,
-        reason: l.reason, adminId: l.admin?._id,
-        admin: l.admin ? { displayName: l.admin.displayName } : null,
-        createdAt: l.createdAt,
-      })),
+      data: enriched,
       meta: { totalCount, page, pageSize, totalPages: Math.ceil(totalCount / pageSize) },
     })
   } catch (err) { next(err) }

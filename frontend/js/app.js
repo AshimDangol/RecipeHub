@@ -14,6 +14,7 @@ import { renderProfileEdit } from './pages/profile-edit.js'
 import { renderNotifications } from './pages/notifications.js'
 import { renderAdmin } from './pages/admin.js'
 import { renderModeration } from './pages/moderation.js'
+import { renderDashboard } from './pages/dashboard.js'
 
 function requireAuth(handler) {
   return (params, container) => {
@@ -35,6 +36,7 @@ route('/chefs/:id', renderChefDetail)
 route('/profile/edit', requireAuth(renderProfileEdit))
 route('/profile/:id', renderProfile)
 route('/notifications', requireAuth(renderNotifications))
+route('/dashboard', requireAuth(renderDashboard))
 route('/admin', requireAuth(renderAdmin))
 route('/admin/moderation', requireAuth(renderModeration))
 

@@ -36,6 +36,7 @@ function renderHeader() {
         <a href="/chefs" class="${isActive('/chefs')}">Chefs</a>
         ${user?.isAdmin ? `<a href="/admin" class="${isActive('/admin')}">Admin</a>` : ''}
         ${user?.isAdmin ? `<a href="/admin/moderation" class="${isActive('/admin/moderation')}">Moderation</a>` : ''}
+        ${auth && !user?.isAdmin ? `<a href="/dashboard" class="${isActive('/dashboard')}">Dashboard</a>` : ''}
       </nav>
       <div class="nav-actions">
         <button id="theme-toggle" class="btn btn-outline btn-sm" aria-label="Toggle theme">${theme === 'light' ? '🌙' : '☀️'}</button>
@@ -60,6 +61,7 @@ function renderHeader() {
       <a href="/recipes">Recipes</a>
       <a href="/chefs">Chefs</a>
       ${user?.isAdmin ? `<a href="/admin">Admin</a><a href="/admin/moderation">Moderation</a>` : ''}
+      ${auth && !user?.isAdmin ? `<a href="/dashboard">Dashboard</a>` : ''}
       <button id="theme-toggle-mobile">${theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}</button>
       ${auth && user ? `
         <a href="/notifications">Notifications</a>

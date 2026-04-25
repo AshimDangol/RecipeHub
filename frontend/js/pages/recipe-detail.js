@@ -70,6 +70,13 @@ export function renderRecipeDetail({ id }, container) {
             <button id="fav-btn" class="recipe-action-btn ${isFavorited ? 'favorited' : ''}" ${favLoading ? 'disabled' : ''}>
               ${isFavorited ? '⭐' : '☆'} ${favLoading ? '...' : isFavorited ? 'Favorited' : 'Favorite'}
             </button>
+            <div class="share-group">
+              <span class="share-label">Share:</span>
+              <a class="share-btn share-twitter" id="share-twitter" href="#" title="Share on X / Twitter" target="_blank" rel="noopener">𝕏</a>
+              <a class="share-btn share-facebook" id="share-facebook" href="#" title="Share on Facebook" target="_blank" rel="noopener">f</a>
+              <a class="share-btn share-whatsapp" id="share-whatsapp" href="#" title="Share on WhatsApp" target="_blank" rel="noopener">💬</a>
+              <button class="share-btn share-copy" id="share-copy" title="Copy link">🔗</button>
+            </div>
           </div>
         </div>
         <div class="grid-2">
@@ -94,6 +101,25 @@ export function renderRecipeDetail({ id }, container) {
   }
 
   function bindActions() {
+    // Social sharing
+    const pageUrl = encodeURIComponent(window.location.href)
+    const pageTitle = encodeURIComponent(recipe.title)
+
+    const tw = document.getElementById('share-twitter')
+    if (tw) tw.href = `https://twitter.com/intent/tweet?text=${pageTitle}&url=${pageUrl}`
+
+    const fb = document.getElementById('share-facebook')
+    if (fb) fb.href = `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`
+
+    const wa = document.getElementById('share-whatsapp')
+    if (wa) wa.href = `https://wa.me/?text=${pageTitle}%20${pageUrl}`
+
+    document.getElementById('share-copy')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast('Link copied!', 'success')
+      }).catch(() => showToast('Could not copy link', 'error'))
+    })
+
     document.getElementById('delete-recipe-btn')?.addEventListener('click', async () => {
       if (!confirm('Delete this recipe? This cannot be undone.')) return
       const btn = document.getElementById('delete-recipe-btn')
