@@ -15,11 +15,14 @@ export default function Notifications() {
   const markAll = async () => {
     await notificationsApi.markAllAsRead()
     setNotifications(n => n.map(x => ({ ...x, isRead: true })))
+    window.dispatchEvent(new Event('notifications:marked-read'))
   }
 
   const markOne = async (id) => {
     await notificationsApi.markAsRead(id)
     setNotifications(n => n.map(x => x.id?.toString() === id ? { ...x, isRead: true } : x))
+    // Tell sidebar to decrement its count
+    window.dispatchEvent(new CustomEvent('notifications:marked-one'))
   }
 
   const unread = notifications.filter(n => !n.isRead).length

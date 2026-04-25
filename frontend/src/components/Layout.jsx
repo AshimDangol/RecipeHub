@@ -334,14 +334,20 @@ function NotifLink({ collapsed, isActive }) {
   const [unread, setUnread] = useState(0)
   const { isAuthenticated } = useAuth()
 
+  // Expose a global refresh so other components can trigger it
   useEffect(() => {
     if (!isAuthenticated) return
-    fetch_()
-    const iv = setInterval(fetch_, 30000)
-    return () => clearInterval(iv)
+    fetchUnread()
+    const iv = setInterval(fetchUnread, 30000)
+    // Listen for a custom event fired when notifications are marked read
+    const onMarked = () => { setUnread(0) }
+    const onMarkedOne = () => { setUnread(u => Math.max(0, u - 1)) }
+    window.addEventListener('notifications:marked-read', onMarked)
+    window.addEventListener('notifications:marked-one', onMarkedOne)
+    return () => { clearInterval(iv); window.removeEventListener('notifications:marked-read', onMarked); window.removeEventListener('notifications:marked-one', onMarkedOne) }
   }, [isAuthenticated])
 
-  async function fetch_() {
+  async function fetchUnread() {
     try { const r = await notificationsApi.getUnreadCount(); setUnread(r.data.unreadCount) } catch {}
   }
 
@@ -570,7 +576,11 @@ function BellBadge() {
   useEffect(() => {
     fetchCount()
     const interval = setInterval(fetchCount, 30000)
-    return () => clearInterval(interval)
+    const onMarked = () => setUnread(0)
+    const onMarkedOne = () => setUnread(u => Math.max(0, u - 1))
+    window.addEventListener('notifications:marked-read', onMarked)
+    window.addEventListener('notifications:marked-one', onMarkedOne)
+    return () => { clearInterval(interval); window.removeEventListener('notifications:marked-read', onMarked); window.removeEventListener('notifications:marked-one', onMarkedOne) }
   }, [])
 
   useEffect(() => {
@@ -595,6 +605,7 @@ function BellBadge() {
   const markAll = async () => {
     await notificationsApi.markAllAsRead()
     setNotifications(n => n.map(x => ({ ...x, isRead: true }))); setUnread(0)
+    window.dispatchEvent(new Event('notifications:marked-read'))
   }
   const markOne = async (id) => {
     await notificationsApi.markAsRead(id)
