@@ -1,6 +1,8 @@
 ﻿# RecipeNest
+# RecipeNest
 
-A full-stack recipe sharing platform built with React and Node.js. Chefs can publish recipes, build a portfolio, and manage their profile. Food lovers can discover recipes, follow chefs, leave reviews, like and favourite dishes, and receive notifications. Admins can moderate content via a dedicated dashboard.
+
+A full-stack recipe sharing platform built with React and Node.js. Chefs publish recipes, build a portfolio, and manage their profile. Food lovers discover recipes, follow chefs, leave reviews, like and favourite dishes, and get notifications. Admins moderate content via a dedicated dashboard. **ChefBot** — an AI cooking assistant powered by a local Ollama model — is available on every page.
 
 ---
 
@@ -9,9 +11,10 @@ A full-stack recipe sharing platform built with React and Node.js. Chefs can pub
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, React Router v6, Vite 5 |
-| Styling | Plain CSS (custom futuristic design system, dark mode, responsive) |
+| Styling | Plain CSS — custom dark-first design system, responsive |
 | Backend | Node.js, Express 4, MongoDB (Mongoose 8), Multer, JWT |
-| Auth | JWT (bcryptjs, 7-day expiry, IP-based rate limiting) |
+| Auth | JWT — bcryptjs, 7-day expiry, IP-based rate limiting |
+| AI Chat | Ollama — local LLM, no API keys, no cloud |
 
 ---
 
@@ -24,19 +27,20 @@ RecipeNest/
 │   ├── vite.config.js          # Vite + API proxy to :5200
 │   ├── package.json
 │   ├── css/
-│   │   └── styles.css          # Global design system (dark-first, futuristic)
+│   │   └── styles.css          # Global design system
 │   ├── public/
 │   │   ├── favicon.svg
 │   │   └── icons.svg
 │   └── src/
 │       ├── main.jsx            # React entry point
 │       ├── App.jsx             # Route definitions
-│       ├── api.js              # fetch-based API client + mediaUrl()
-│       ├── toast.js            # Toast notification helper
+│       ├── api.js              # Fetch client + mediaUrl() + chatApi
+│       ├── toast.js            # Toast helper
 │       ├── context/
-│       │   └── AuthContext.jsx # Global auth state (React Context + hooks)
+│       │   └── AuthContext.jsx # Global auth state
 │       ├── components/
-│       │   ├── Layout.jsx      # Collapsible sidebar, search modal, bell
+│       │   ├── Layout.jsx      # Sidebar, search modal, notification bell
+│       │   ├── OllamaChat.jsx  # ChefBot floating chat panel
 │       │   ├── ProtectedRoute.jsx
 │       │   ├── RecipeCard.jsx
 │       │   └── StarRating.jsx
@@ -51,7 +55,7 @@ RecipeNest/
 │           ├── ChefDetail.jsx
 │           ├── Profile.jsx
 │           ├── ProfileEdit.jsx
-│           ├── Dashboard.jsx   # Chef dashboard
+│           ├── Dashboard.jsx
 │           ├── Notifications.jsx
 │           ├── Admin.jsx
 │           ├── Moderation.jsx
@@ -64,7 +68,7 @@ RecipeNest/
         ├── server.js
         ├── app.js
         ├── config/
-        │   └── db.js               # Mongoose connection
+        │   └── db.js
         ├── models/
         │   ├── User.js
         │   ├── Recipe.js
@@ -81,14 +85,15 @@ RecipeNest/
         │   ├── reviews.js
         │   ├── chefs.js
         │   ├── notifications.js
-        │   └── admin.js
+        │   ├── admin.js
+        │   └── chat.js         # ChefBot — Ollama SSE proxy
         ├── middleware/
-        │   ├── auth.js             # JWT verify, requireAdmin
-        │   ├── upload.js           # Multer config
+        │   ├── auth.js
+        │   ├── upload.js
         │   └── errorHandler.js
         └── scripts/
             ├── createAdmin.js
-            └── seed.js             # 10 chefs, 50 recipes, follows, likes
+            └── seed.js
 ```
 
 ---
@@ -98,80 +103,115 @@ RecipeNest/
 ### Prerequisites
 
 - Node.js 18+
-- MongoDB running locally (default port 27017)
+- MongoDB running locally on port 27017
+- [Ollama](https://ollama.com/download) installed (for ChefBot)
 
 ---
 
-### 1. Backend
+## Quick Start — Run Everything
+
+Open **three separate terminals** and run the following commands in order.
+
+---
+
+### Terminal 1 — Ollama (AI Chat)
 
 ```bash
-# from the backend/ folder
-cp .env.example .env    # then fill in JWT_SECRET
+# Check if Ollama is already running (it auto-starts on most systems)
+ollama list
+
+# If not running, start it
+ollama serve
+
+# Pull the model (only needed once)
+ollama pull llama3.2
+```
+
+> If you see `Error: listen tcp 0.0.0.0:11434: bind: Only one usage...` — Ollama is already running. Skip `ollama serve`.
+
+---
+
+### Terminal 2 — Backend
+
+```bash
+cd backend
+
+# First time only — copy the example env file
+cp .env.example .env
+
+# Install dependencies (first time only)
 npm install
+
+# Create the admin account (first time only)
+node src/scripts/createAdmin.js
+
+# Seed 10 chefs and 50 recipes (first time only)
+node src/scripts/seed.js
+
+# Start the backend
 npm run dev
 ```
 
-API runs at `http://localhost:5200`.
+> API runs at **http://localhost:5200**
 
-**Environment variables:**
+> If login fails right after seeding, restart the backend once to reset the in-memory rate limiter.
+
+---
+
+### Terminal 3 — Frontend
+
+```bash
+cd frontend
+
+# Install dependencies (first time only)
+npm install
+
+# Start the frontend
+npm run dev
+```
+
+> App opens at **http://localhost:3000**
+
+---
+
+## Environment Variables
+
+All variables live in `backend/.env`. Copy from `backend/.env.example` to get started.
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `5200` | Server port |
+| `PORT` | `5200` | Backend server port |
 | `MONGODB_URI` | `mongodb://localhost:27017/recipenest` | MongoDB connection string |
-| `JWT_SECRET` | — | Required — use a long random string |
+| `JWT_SECRET` | — | **Required** — use a long random string |
 | `JWT_EXPIRES_IN` | `7d` | Token lifetime |
 | `UPLOAD_DIR` | `uploads` | Directory for uploaded files |
-| `CORS_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Allowed origins |
+| `CORS_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Allowed CORS origins |
+| `OLLAMA_URL` | `http://localhost:11434` | Ollama API base URL |
+| `OLLAMA_MODEL` | `llama3.2:latest` | Model name — must match exactly what `ollama list` shows |
 
 ---
 
-### 2. Frontend
+## Seed Data
 
-```bash
-# from the frontend/ folder
-npm install
-npm run dev
-```
+The seed script is idempotent — safe to run multiple times.
 
-Opens at `http://localhost:3000`. Vite proxies `/api` and `/uploads` to the backend on port 5200 — no CORS config needed during development.
+| Data | Count |
+|---|---|
+| Chef users | 10 |
+| Recipes (5 per chef) | 50 |
+| Follow relationships | 30 |
+| Likes | 22 |
 
-To build for production:
+Recipes span all 8 categories (Breakfast, Lunch, Dinner, Dessert, Snack, Soup, Salad, Drinks) and all 3 difficulty levels, each with Unsplash food photos, 6–8 ingredients, and 4–5 step instructions.
 
-```bash
-npm run build       # outputs to frontend/dist/
-npm run preview     # preview the production build locally
-```
-
----
-
-### 3. Seed Data
-
-**Step 1 — Create the admin account:**
-
-```bash
-# from the backend/ folder
-node src/scripts/createAdmin.js
-```
-
-**Step 2 — Seed 10 chefs and 50 recipes:**
-
-```bash
-node src/scripts/seed.js
-```
-
-> If login fails immediately after seeding, restart the backend to reset the in-memory rate limiter.
-
-The seed script is idempotent — running it again skips any records that already exist.
-
-**Admin credentials:**
+**Admin credentials**
 
 | Field | Value |
 |---|---|
 | Email | admin@recipenest.com |
 | Password | Admin@1234 |
 
-**Seeded chef credentials:**
+**Seeded chef credentials**
 
 | Chef | Email | Password |
 |---|---|---|
@@ -186,66 +226,78 @@ The seed script is idempotent — running it again skips any records that alread
 | Massimo Bottura | massimo@recipenest.com | Massimo@1234 |
 | Nobu Matsuhisa | nobu@recipenest.com | Nobu@1234 |
 
-**What the seed creates:**
-
-| Data | Count |
-|---|---|
-| Chef users | 10 |
-| Recipes (5 per chef) | 50 |
-| Follow relationships | 30 |
-| Likes | 22 |
-
-Recipes span all 8 categories (Breakfast, Lunch, Dinner, Dessert, Snack, Soup, Salad, Drinks) and all 3 difficulty levels, each with real Unsplash food photos, 6–8 ingredients, and 4–5 step-by-step instructions.
-
 ---
 
 ## Features
 
 ### Navigation
-- Collapsible sidebar with icon-only collapsed mode
-- `Ctrl+K` / `Cmd+K` quick search modal — search pages and recipe categories
-- Category quick-filter chips in the sidebar
-- Live notification badge with unread count (polls every 30 seconds)
-- Mobile drawer with hamburger toggle
+- Collapsible sidebar — icon-only collapsed mode on desktop, drawer on mobile
+- `Ctrl+K` / `Cmd+K` quick search modal — pages and recipe categories
+- Live notification badge — polls every 30 seconds
+- Mobile hamburger toggle
 
-### Chefs & Profiles
+### Auth & Profiles
 - Register and log in with JWT authentication
-- Profile hero card with cover gradient, avatar, follower/recipe counts, bio, and links
-- Upload and crop a profile photo (up to 5 MB)
+- Profile hero card — avatar, follower/recipe counts, bio, links
+- Upload a profile photo (up to 5 MB)
 - Follow / unfollow chefs
-- Profile tabs: Recipes, Favourites, Following
+- Profile tabs: Recipes (public), Favourites and Following (owner only)
 
 ### Recipes
 - Browse with category filters, difficulty filters, full-text search, and pagination
-- Create, edit, and delete your own recipes with dynamic ingredient and instruction lists
+- Create, edit, and delete your own recipes — dynamic ingredient and instruction lists
 - Upload a recipe photo (up to 10 MB)
 - Like and favourite recipes
 - Share via X/Twitter, Facebook, WhatsApp, or copy link
-- Star ratings and written reviews (edit and delete your own)
+- Star ratings (1–5) and written reviews — edit and delete your own
 
-### Chef Dashboard
+### Dashboard
 - Stats: recipe count, follower count, total likes, total reviews
-- Manage all your recipes (edit or delete) from one place
+- Manage all your recipes from one place
 - Saved favourites grid
 
 ### Notifications
-- Sidebar notification link with live unread badge
-- Notifications for new followers, recipe reviews, and moderation actions
-- Mark individual or all notifications as read
+- Live unread badge in the sidebar
+- Triggered by: new followers, recipe reviews, moderation actions
+- Mark individual or all as read
 
 ### Admin
-- Platform statistics with bar charts (users, recipes, reviews, active users)
-- Content moderation — search and browse all recipes and reviews, flag with optional reason
-- Flagged content hidden from public; owners notified automatically
+- Platform statistics — users, recipes, reviews, daily/monthly active users with bar charts
+- Content moderation — search all recipes and reviews, flag with optional reason
+- Flagged content hidden from public; owner notified automatically
 - Restore flagged content
-- Audit log with content title, author, reason, admin, and date — searchable
+- Full audit log — searchable by title, author, reason, date
+
+### ChefBot (AI Assistant)
+- Floating 🤖 button fixed to the bottom-right corner on every page
+- Powered by Ollama — runs locally, no internet required, no API keys
+- Responses stream token-by-token as the model generates them
+- Conversation history kept for context (last 10 messages per request)
+- Quick suggestion chips on first open
+- Clear button to reset the session
+- Scoped to culinary topics: recipes, cooking techniques, ingredient substitutions, chef profiles, meal planning, and how to use RecipeNest
+- Works with any Ollama model — swap by changing `OLLAMA_MODEL` in `.env`
 
 ---
 
 ## Password Requirements
 
-Passwords must be at least 8 characters and include an uppercase letter, a lowercase letter, and a number.  
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+
 Example: `Password1`
+
+---
+
+## Production Build
+
+```bash
+cd frontend
+npm run build       # outputs to frontend/dist/
+npm run preview     # preview the production build locally
+```
 
 ---
 
@@ -262,7 +314,7 @@ Example: `Password1`
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| GET | `/api/recipes` | | List recipes (paginated, searchable, filterable) |
+| GET | `/api/recipes` | | List (paginated, searchable, filterable) |
 | GET | `/api/recipes/search` | | Full-text search |
 | GET | `/api/recipes/filter` | | Filter by category / difficulty |
 | GET | `/api/recipes/:id` | | Get recipe |
@@ -326,13 +378,32 @@ Example: `Password1`
 | PUT | `/api/admin/content/:id/restore` | admin | Restore flagged content |
 | GET | `/api/admin/moderation-logs` | admin | Audit log (searchable) |
 
+### Chat (ChefBot)
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/api/chat` | | Send message, streams SSE response from Ollama |
+
+**Request body:**
+```json
+{
+  "message": "What can I make with leftover chicken?",
+  "history": [
+    { "role": "user", "content": "..." },
+    { "role": "assistant", "content": "..." }
+  ]
+}
+```
+
+**Response:** `text/event-stream` — each event is `data: {"token":"..."}`, terminated by `data: {"done":true}`.
+
 ---
 
 ## File Uploads
 
-Uploaded files are saved to `backend/uploads/` and served statically at `/uploads/<filename>`. The frontend resolves these to full URLs via `mediaUrl()` in `src/api.js`.
+Files are saved to `backend/uploads/` and served at `/uploads/<filename>`. The frontend resolves them via `mediaUrl()` in `src/api.js`.
 
-| Type | Route | Size limit | Formats |
+| Type | Route | Limit | Formats |
 |---|---|---|---|
 | Profile photo | `POST /api/users/:id/photo` | 5 MB | jpg, jpeg, png, gif, webp |
 | Recipe image | `POST /api/recipes/:id/image` | 10 MB | jpg, jpeg, png, gif, webp |

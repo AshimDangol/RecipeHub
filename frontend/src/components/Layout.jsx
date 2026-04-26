@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { notificationsApi, usersApi, chefsApi, mediaUrl } from '../api.js'
 import { showToast } from '../toast.js'
+import OllamaChat from './OllamaChat.jsx'
 
 function getTheme() { return localStorage.getItem('theme') || 'dark' }
 function applyTheme(t) {
@@ -325,6 +326,9 @@ export default function Layout() {
           </div>
         </footer>
       </div>
+
+      {/* ChefBot — floating Ollama chat */}
+      <OllamaChat />
     </div>
   )
 }

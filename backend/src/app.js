@@ -9,6 +9,7 @@ import reviewsRoutes from './routes/reviews.js'
 import chefsRoutes from './routes/chefs.js'
 import notificationsRoutes from './routes/notifications.js'
 import adminRoutes from './routes/admin.js'
+import chatRoutes from './routes/chat.js'
 
 const app = express()
 
@@ -44,6 +45,7 @@ app.use('/api/reviews',       reviewsRoutes)
 app.use('/api/chefs',         chefsRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/admin',         adminRoutes)
+app.use('/api/chat',          chatRoutes)
 
 // 404
 app.use((_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } }))

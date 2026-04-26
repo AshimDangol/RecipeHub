@@ -101,3 +101,53 @@ export const adminApi = {
   restoreContent: (id, contentType) => put(`/admin/content/${id}/restore`, null, { contentType }),
   getModerationLogs: (params) => get('/admin/moderation-logs', params),
 }
+
+// Chat — streams SSE tokens from Ollama via the backend
+export const chatApi = {
+  /**
+   * Send a message and stream the response.
+   * @param {string} message
+   * @param {Array<{role:string,content:string}>} history
+   * @param {(token:string)=>void} onToken  called for each streamed token
+   * @param {()=>void} onDone  called when stream ends
+   * @returns {Promise<void>}
+   */
+  async sendMessage(message, history, onToken, onDone) {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${BASE_URL}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ message, history }),
+    })
+
+    if (!res.ok) {
+      let err
+      try { err = await res.json() } catch { err = {} }
+      throw new Error(err?.error?.message || 'Chat request failed')
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() // keep incomplete line
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const json = JSON.parse(line.slice(6))
+          if (json.token) onToken(json.token)
+          if (json.done) onDone?.()
+        } catch { /* skip */ }
+      }
+    }
+    onDone?.()
+  },
+}
