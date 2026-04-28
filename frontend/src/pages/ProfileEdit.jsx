@@ -4,21 +4,23 @@ import { usersApi, mediaUrl } from '../api.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { showToast } from '../toast.js'
 
+// Profile edit form — allows updating display name, bio, links, and photo
 export default function ProfileEdit() {
   const { user, refreshUser } = useAuth()
   const navigate = useNavigate()
-  const [displayName, setDisplayName] = useState(user?.displayName ?? '')
-  const [aboutMe, setAboutMe] = useState(user?.aboutMe ?? '')
-  const [contactLinks, setContactLinks] = useState(user?.contactLinks ?? '')
+  const [displayName, setDisplayName]           = useState(user?.displayName ?? '')
+  const [aboutMe, setAboutMe]                   = useState(user?.aboutMe ?? '')
+  const [contactLinks, setContactLinks]         = useState(user?.contactLinks ?? '')
   const [socialMediaLinks, setSocialMediaLinks] = useState(user?.socialMediaLinks ?? '')
-  const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(user?.profilePhotoUrl ? mediaUrl(user.profilePhotoUrl) : null)
-  const [photoError, setPhotoError] = useState('')
-  const [formError, setFormError] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [photoFile, setPhotoFile]               = useState(null)
+  const [photoPreview, setPhotoPreview]         = useState(user?.profilePhotoUrl ? mediaUrl(user.profilePhotoUrl) : null)
+  const [photoError, setPhotoError]             = useState('')
+  const [formError, setFormError]               = useState('')
+  const [uploading, setUploading]               = useState(false)
+  const [saving, setSaving]                     = useState(false)
   const fileRef = useRef(null)
 
+  // Validate and preview the selected photo before uploading
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -29,6 +31,7 @@ export default function ProfileEdit() {
     setPhotoPreview(URL.createObjectURL(file))
   }
 
+  // Upload the photo immediately without saving the rest of the form
   const handleUploadPhoto = async () => {
     if (!photoFile) return
     setUploading(true); setPhotoError('')
@@ -44,6 +47,7 @@ export default function ProfileEdit() {
     setUploading(false)
   }
 
+  // Save all profile fields (and upload photo if pending) then navigate to profile
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFormError(''); setSaving(true)
@@ -68,6 +72,7 @@ export default function ProfileEdit() {
       </div>
       {formError && <div className="alert alert-error">{formError}</div>}
       <div className="card card-body">
+        {/* Photo picker */}
         <div className="form-group" style={{ marginBottom: '1.5rem' }}>
           <label className="form-label">Profile Photo</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginTop: '.5rem' }}>
@@ -87,6 +92,8 @@ export default function ProfileEdit() {
             </div>
           </div>
         </div>
+
+        {/* Profile fields */}
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label" htmlFor="pe-name">Display Name</label>

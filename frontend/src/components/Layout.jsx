@@ -1,3 +1,4 @@
+// Main app shell — sidebar navigation, mobile topbar, page content, and ChefBot
 import { useState, useEffect, useRef } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -5,7 +6,10 @@ import { notificationsApi, usersApi, chefsApi, mediaUrl } from '../api.js'
 import { showToast } from '../toast.js'
 import OllamaChat from './OllamaChat.jsx'
 
+// Read the saved theme preference from localStorage (defaults to dark)
 function getTheme() { return localStorage.getItem('theme') || 'dark' }
+
+// Persist and apply a theme by toggling the 'dark' class on <html>
 function applyTheme(t) {
   localStorage.setItem('theme', t)
   document.documentElement.classList.toggle('dark', t === 'dark')
@@ -14,22 +18,54 @@ function applyTheme(t) {
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Soup', 'Salad', 'Drinks']
 
 const NAV_ITEMS = [
-  { to: '/',         label: 'Home',     icon: '🏠', desc: 'Landing page' },
-  { to: '/recipes',  label: 'Recipes',  icon: '🍽️', desc: 'Browse all recipes' },
-  { to: '/chefs',    label: 'Chefs',    icon: '👨‍🍳', desc: 'Discover chefs' },
+  { to: '/',         label: 'Home',     icon: 'home',    desc: 'Landing page' },
+  { to: '/recipes',  label: 'Recipes',  icon: 'recipes', desc: 'Browse all recipes' },
+  { to: '/chefs',    label: 'Chefs',    icon: 'chefs',   desc: 'Discover chefs' },
 ]
 const MY_ITEMS = [
-  { to: '/dashboard',     label: 'Dashboard',     icon: '📊', desc: 'Your stats & recipes' },
-  { to: '/profile',       label: 'My Profile',    icon: '👤', desc: 'View your profile' },
+  { to: '/dashboard',     label: 'Dashboard',     icon: 'dashboard', desc: 'Your stats & recipes' },
+  { to: '/profile',       label: 'My Profile',    icon: 'profile',   desc: 'View your profile' },
 ]
 const ADMIN_ITEMS = [
-  { to: '/admin',            label: 'Statistics',  icon: '📈', desc: 'Platform overview' },
-  { to: '/admin/moderation', label: 'Moderation',  icon: '🚩', desc: 'Review flagged content' },
+  { to: '/admin',            label: 'Statistics',  icon: 'stats',      desc: 'Platform overview' },
+  { to: '/admin/moderation', label: 'Moderation',  icon: 'moderation', desc: 'Review flagged content' },
 ]
 
 // (recent pages tracking removed — replaced by social panel)
 
-// Defined outside Layout so React doesn't treat it as a new component type on every render
+const ICONS = {
+  home:         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  recipes:      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>,
+  chefs:        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/><path d="M6 17h12"/></svg>,
+  dashboard:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  profile:      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>,
+  stats:        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  moderation:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
+  newrecipe:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  notifications:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  search:       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  settings:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  logout:       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  login:        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>,
+  moon:         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+  sun:          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+  logo:         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>,
+  tag:          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
+  following:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  followers:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+}
+
+function Icon({ name, size = 16 }) {
+  const svg = ICONS[name]
+  if (!svg) return null
+  return (
+    <span className="icon" style={{ width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      {svg}
+    </span>
+  )
+}
+
+// Sidebar link component — defined outside Layout to avoid re-mounting on every render
 function SidebarLink({ item, isActive, collapsed }) {
   return (
     <Link
@@ -37,7 +73,7 @@ function SidebarLink({ item, isActive, collapsed }) {
       className={`sidebar-link${isActive ? ' active' : ''}`}
       title={collapsed ? item.label : undefined}
     >
-      <span className="sidebar-link-icon">{item.icon}</span>
+      <span className="sidebar-link-icon"><Icon name={item.icon} size={18} /></span>
       {!collapsed && <span className="sidebar-link-label">{item.label}</span>}
     </Link>
   )
@@ -55,13 +91,15 @@ export default function Layout() {
   const sidebarRef = useRef(null)
   const searchRef = useRef(null)
 
+  // Apply the theme whenever it changes
   useEffect(() => { applyTheme(theme) }, [theme])
 
+  // Close the mobile sidebar whenever the route changes
   useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
 
-  // Close mobile sidebar on outside click
+  // Close mobile sidebar when clicking outside it
   useEffect(() => {
     if (!mobileOpen) return
     const h = (e) => { if (sidebarRef.current && !sidebarRef.current.contains(e.target)) setMobileOpen(false) }
@@ -69,7 +107,7 @@ export default function Layout() {
     return () => document.removeEventListener('mousedown', h)
   }, [mobileOpen])
 
-  // Global keyboard shortcut: Ctrl+K / Cmd+K → open search
+  // Global keyboard shortcut: Ctrl+K / Cmd+K opens the quick-search modal
   useEffect(() => {
     const h = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(s => !s) }
@@ -92,8 +130,8 @@ export default function Layout() {
     ...NAV_ITEMS,
     ...(isAuthenticated ? MY_ITEMS : []),
     ...(user?.isAdmin ? ADMIN_ITEMS : []),
-    ...CATEGORIES.map(c => ({ to: `/recipes?category=${c}`, label: c, icon: '🏷️', desc: `${c} recipes` })),
-    { to: '/recipes/create', label: 'New Recipe', icon: '✏️', desc: 'Create a recipe' },
+    ...CATEGORIES.map(c => ({ to: `/recipes?category=${c}`, label: c, icon: 'tag', desc: `${c} recipes` })),
+    { to: '/recipes/create', label: 'New Recipe', icon: 'newrecipe', desc: 'Create a recipe' },
   ]
   const searchResults = searchQ.trim()
     ? allSearchItems.filter(i => i.label.toLowerCase().includes(searchQ.toLowerCase()) || i.desc?.toLowerCase().includes(searchQ.toLowerCase()))
@@ -110,7 +148,7 @@ export default function Layout() {
         <div className="search-modal-overlay" onClick={() => setSearchOpen(false)}>
           <div className="search-modal" onClick={e => e.stopPropagation()}>
             <div className="search-modal-input-wrap">
-              <span className="search-modal-icon">🔍</span>
+              <span className="search-modal-icon"><Icon name="search" size={16} /></span>
               <input
                 ref={searchRef}
                 className="search-modal-input"
@@ -126,14 +164,14 @@ export default function Layout() {
                   <p className="search-modal-section">Quick Links</p>
                   {NAV_ITEMS.map(i => (
                     <Link key={i.to} to={i.to} className="search-modal-item" onClick={() => setSearchOpen(false)}>
-                      <span className="search-modal-item-icon">{i.icon}</span>
+                      <span className="search-modal-item-icon"><Icon name={i.icon} size={16} /></span>
                       <span>{i.label}</span>
                       <span className="search-modal-item-desc">{i.desc}</span>
                     </Link>
                   ))}
                   {isAuthenticated && MY_ITEMS.map(i => (
                     <Link key={i.to} to={i.to === '/profile' ? `/profile/${user?.id}` : i.to} className="search-modal-item" onClick={() => setSearchOpen(false)}>
-                      <span className="search-modal-item-icon">{i.icon}</span>
+                      <span className="search-modal-item-icon"><Icon name={i.icon} size={16} /></span>
                       <span>{i.label}</span>
                       <span className="search-modal-item-desc">{i.desc}</span>
                     </Link>
@@ -144,7 +182,7 @@ export default function Layout() {
               ) : (
                 searchResults.map(i => (
                   <Link key={i.to} to={i.to} className="search-modal-item" onClick={() => { setSearchOpen(false); setSearchQ('') }}>
-                    <span className="search-modal-item-icon">{i.icon}</span>
+                    <span className="search-modal-item-icon"><Icon name={i.icon} size={16} /></span>
                     <span>{i.label}</span>
                     <span className="search-modal-item-desc">{i.desc}</span>
                   </Link>
@@ -161,7 +199,7 @@ export default function Layout() {
         {/* Logo + collapse */}
         <div className="sidebar-logo">
           <Link to="/" className="sidebar-logo-link">
-            <span className="sidebar-logo-icon">🍳</span>
+            <span className="sidebar-logo-icon"><Icon name="logo" size={22} /></span>
             {!collapsed && <span className="sidebar-logo-text">RecipeNest</span>}
           </Link>
           <button className="sidebar-collapse-btn" onClick={() => setCollapsed(c => !c)} aria-label="Toggle sidebar">
@@ -176,7 +214,7 @@ export default function Layout() {
             onClick={() => setSearchOpen(true)}
             title="Search (Ctrl+K)"
           >
-            <span className="sidebar-link-icon">🔍</span>
+            <span className="sidebar-link-icon"><Icon name="search" size={18} /></span>
             {!collapsed && (
               <>
                 <span className="sidebar-search-placeholder">Search…</span>
@@ -204,7 +242,7 @@ export default function Layout() {
 
               {/* Profile */}
               <SidebarLink
-                item={{ to: `/profile/${user.id}`, label: 'My Profile', icon: '👤' }}
+                item={{ to: `/profile/${user.id}`, label: 'My Profile', icon: 'profile' }}
                 isActive={isActive(`/profile/${user.id}`)}
                 collapsed={collapsed}
               />
@@ -212,7 +250,7 @@ export default function Layout() {
               {/* Dashboard — non-admin only */}
               {!user.isAdmin && (
                 <SidebarLink
-                  item={{ to: '/dashboard', label: 'Dashboard', icon: '📊' }}
+                  item={{ to: '/dashboard', label: 'Dashboard', icon: 'dashboard' }}
                   isActive={isActive('/dashboard')}
                   collapsed={collapsed}
                 />
@@ -220,7 +258,7 @@ export default function Layout() {
 
               {/* New Recipe — all users */}
               <SidebarLink
-                item={{ to: '/recipes/create', label: 'New Recipe', icon: '✏️' }}
+                item={{ to: '/recipes/create', label: 'New Recipe', icon: 'newrecipe' }}
                 isActive={isActive('/recipes/create')}
                 collapsed={collapsed}
               />
@@ -263,13 +301,13 @@ export default function Layout() {
               </Link>
               <div className="sidebar-actions">
                 <button className="sidebar-icon-btn" onClick={toggleTheme} title={theme === 'light' ? 'Dark mode' : 'Light mode'}>
-                  {theme === 'light' ? '🌙' : '☀️'}
+                  <Icon name={theme === 'light' ? 'moon' : 'sun'} size={16} />
                 </button>
                 {!collapsed && (
-                  <Link to="/profile/edit" className="sidebar-icon-btn" title="Edit profile">⚙️ Settings</Link>
+                  <Link to="/profile/edit" className="sidebar-icon-btn" title="Edit profile"><Icon name="settings" size={16} /> Settings</Link>
                 )}
                 <button className="sidebar-icon-btn logout-btn" onClick={handleLogout} title="Logout">
-                  {collapsed ? '⏻' : '↩ Logout'}
+                  {collapsed ? <Icon name="logout" size={16} /> : <><Icon name="logout" size={16} /> Logout</>}
                 </button>
               </div>
             </>
@@ -277,9 +315,9 @@ export default function Layout() {
             <div className="sidebar-auth-btns">
               {collapsed ? (
                 <>
-                  <Link to="/login" className="sidebar-icon-btn" title="Login" style={{ justifyContent: 'center' }}>🔑</Link>
+                  <Link to="/login" className="sidebar-icon-btn" title="Login" style={{ justifyContent: 'center' }}><Icon name="login" size={16} /></Link>
                   <button className="sidebar-icon-btn" onClick={toggleTheme} title="Toggle theme" style={{ justifyContent: 'center' }}>
-                    {theme === 'light' ? '🌙' : '☀️'}
+                    <Icon name={theme === 'light' ? 'moon' : 'sun'} size={16} />
                   </button>
                 </>
               ) : (
@@ -287,7 +325,7 @@ export default function Layout() {
                   <Link to="/login" className="btn btn-outline btn-full btn-sm" style={{ marginBottom: '.5rem' }}>Login</Link>
                   <Link to="/register" className="btn btn-primary btn-full btn-sm">Get Started</Link>
                   <button className="sidebar-icon-btn" onClick={toggleTheme} style={{ marginTop: '.5rem' }}>
-                    {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
+                    <Icon name={theme === 'light' ? 'moon' : 'sun'} size={16} /> {theme === 'light' ? 'Dark mode' : 'Light mode'}
                   </button>
                 </>
               )}
@@ -302,13 +340,13 @@ export default function Layout() {
           <span /><span /><span />
         </button>
         <Link to="/" className="sidebar-logo-link">
-          <span className="sidebar-logo-icon">🍳</span>
+          <span className="sidebar-logo-icon"><Icon name="logo" size={22} /></span>
           <span className="sidebar-logo-text">RecipeNest</span>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.375rem' }}>
-          <button className="sidebar-icon-btn" onClick={() => setSearchOpen(true)} title="Search">🔍</button>
+          <button className="sidebar-icon-btn" onClick={() => setSearchOpen(true)} title="Search"><Icon name="search" size={18} /></button>
           {isAuthenticated && <BellBadge />}
-          <button className="sidebar-icon-btn" onClick={toggleTheme}>{theme === 'light' ? '🌙' : '☀️'}</button>
+          <button className="sidebar-icon-btn" onClick={toggleTheme}><Icon name={theme === 'light' ? 'moon' : 'sun'} size={16} /></button>
         </div>
       </div>
 
@@ -317,7 +355,7 @@ export default function Layout() {
         <main id="main-content"><Outlet /></main>
         <footer id="site-footer">
           <div className="footer-inner">
-            <div className="footer-logo"><span>🍳</span> RecipeNest</div>
+            <div className="footer-logo"><Icon name="logo" size={18} /> RecipeNest</div>
             <div className="footer-links">
               <Link to="/recipes">Recipes</Link>
               <Link to="/chefs">Chefs</Link>
@@ -334,6 +372,7 @@ export default function Layout() {
 }
 
 /* ── Notifications sidebar link with live unread badge ── */
+// Polls the unread count every 30 s and listens for custom mark-read events
 function NotifLink({ collapsed, isActive }) {
   const [unread, setUnread] = useState(0)
   const { isAuthenticated } = useAuth()
@@ -361,7 +400,7 @@ function NotifLink({ collapsed, isActive }) {
       className={`sidebar-link${isActive ? ' active' : ''}`}
       title={collapsed ? `Notifications${unread > 0 ? ` (${unread})` : ''}` : undefined}
     >
-      <span className="sidebar-link-icon">🔔</span>
+      <span className="sidebar-link-icon"><Icon name="notifications" size={18} /></span>
       {!collapsed && <span className="sidebar-link-label">Notifications</span>}
       {unread > 0 && (
         <span className="sidebar-notif-count" style={{ marginLeft: collapsed ? undefined : 'auto' }}>
@@ -443,7 +482,7 @@ function SidebarSocialPanel({ userId }) {
           onClick={() => setTab('notifs')}
           title="Notifications"
         >
-          🔔 <span>Alerts</span>
+          <Icon name="notifications" size={14} /> <span>Alerts</span>
           {unread > 0 && <span className="sidebar-social-badge">{unread > 99 ? '99+' : unread}</span>}
         </button>
         <button
@@ -451,14 +490,14 @@ function SidebarSocialPanel({ userId }) {
           onClick={() => setTab('following')}
           title="Following"
         >
-          👥 <span>Following</span>
+          <Icon name="following" size={14} /> <span>Following</span>
         </button>
         <button
           className={`sidebar-social-tab${tab === 'followers' ? ' active' : ''}`}
           onClick={() => setTab('followers')}
           title="Followers"
         >
-          ❤️ <span>Followers</span>
+          <Icon name="followers" size={14} /> <span>Followers</span>
         </button>
       </div>
 
@@ -474,7 +513,7 @@ function SidebarSocialPanel({ userId }) {
             )}
           </div>
           {notifs.length === 0 ? (
-            <div className="sidebar-social-empty">🎉 All caught up!</div>
+            <div className="sidebar-social-empty">All caught up!</div>
           ) : (
             notifs.map(n => {
               const link = n.relatedRecipeId
@@ -571,6 +610,7 @@ function SidebarSocialPanel({ userId }) {
 }
 
 /* ── Bell Badge (mobile topbar) ── */
+// Shows unread count and a dropdown preview of recent notifications
 function BellBadge() {
   const [unread, setUnread] = useState(0)
   const [open, setOpen] = useState(false)
@@ -620,7 +660,7 @@ function BellBadge() {
   return (
     <div className="bell-wrap" ref={ref}>
       <button className="bell-btn" onClick={handleOpen} aria-label="Notifications">
-        🔔{unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
+        <Icon name="notifications" size={18} />{unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
       </button>
       {open && (
         <div className="bell-dropdown">

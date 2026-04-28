@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { showToast } from '../toast.js'
 
+// Login page — submits credentials and redirects to home on success
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
+  const [showPw, setShowPw] = useState(false) // toggle password visibility
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 

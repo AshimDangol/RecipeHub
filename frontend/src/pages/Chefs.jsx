@@ -4,14 +4,16 @@ import { chefsApi, mediaUrl } from '../api.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { showToast } from '../toast.js'
 
+// Browse all chefs with sortable list and inline follow/unfollow
 export default function Chefs() {
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [chefs, setChefs] = useState([])
-  const [sortBy, setSortBy] = useState('name')
+  const [chefs, setChefs]     = useState([])
+  const [sortBy, setSortBy]   = useState('name')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [error, setError]     = useState(false)
 
+  // Fetch chefs and, for authenticated users, their follow status
   useEffect(() => {
     async function load() {
       setLoading(true); setError(false)
@@ -19,6 +21,7 @@ export default function Chefs() {
         const r = await chefsApi.getAll(sortBy)
         const list = r.data
         if (isAuthenticated) {
+          // Attach _isFollowing flag to each chef (skip own profile)
           await Promise.all(list.map(async c => {
             if (user?.id?.toString() === c.id?.toString()) return
             try { const s = await chefsApi.getFollowStatus(c.id); c._isFollowing = s.data.isFollowing } catch {}
@@ -31,10 +34,12 @@ export default function Chefs() {
     load()
   }, [sortBy, isAuthenticated])
 
+  // Optimistically toggle follow state, then sync with the server
   const handleFollow = async (e, chef) => {
     e.preventDefault(); e.stopPropagation()
     if (!isAuthenticated) { navigate('/login'); return }
     const following = chef._isFollowing
+    // Optimistic update
     setChefs(prev => prev.map(c => c.id === chef.id ? { ...c, _isFollowing: !following } : c))
     try {
       if (following) {
@@ -47,6 +52,7 @@ export default function Chefs() {
         showToast('Following!', 'success')
       }
     } catch {
+      // Revert optimistic update on failure
       setChefs(prev => prev.map(c => c.id === chef.id ? { ...c, _isFollowing: following } : c))
       showToast('Failed to update follow status', 'error')
     }
@@ -59,6 +65,7 @@ export default function Chefs() {
           <h1 className="page-title">Chefs</h1>
           <p className="page-subtitle">Meet the talented cooks in our community</p>
         </div>
+        {/* Sort controls */}
         <div className="sort-btns">
           <button className={`sort-btn${sortBy === 'name' ? ' active' : ''}`} onClick={() => setSortBy('name')}>Name</button>
           <button className={`sort-btn${sortBy === 'popularity' ? ' active' : ''}`} onClick={() => setSortBy('popularity')}>Popularity</button>
@@ -66,6 +73,7 @@ export default function Chefs() {
       </div>
 
       {loading ? (
+        // Skeleton placeholders while loading
         <div className="grid-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="card card-body animate-pulse">
@@ -100,6 +108,7 @@ export default function Chefs() {
                 </div>
                 <div className="chef-card-footer">
                   <span className="text-brand text-sm font-semibold">View Profile →</span>
+                  {/* Show follow button only for other users */}
                   {isAuthenticated && !isOwn && (
                     <button
                       className={`btn ${c._isFollowing ? 'btn-secondary' : 'btn-primary'} btn-sm`}

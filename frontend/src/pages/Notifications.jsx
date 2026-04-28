@@ -2,26 +2,29 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { notificationsApi } from '../api.js'
 
+// Full-page notifications list with mark-as-read controls
 export default function Notifications() {
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
+  // Load all notifications on mount
   useEffect(() => {
     notificationsApi.getAll().then(r => { setNotifications(r.data.data ?? []); setLoading(false) })
       .catch(() => { setError(true); setLoading(false) })
   }, [])
 
+  // Mark every notification as read and broadcast to the sidebar badge
   const markAll = async () => {
     await notificationsApi.markAllAsRead()
     setNotifications(n => n.map(x => ({ ...x, isRead: true })))
     window.dispatchEvent(new Event('notifications:marked-read'))
   }
 
+  // Mark a single notification as read and decrement the sidebar badge
   const markOne = async (id) => {
     await notificationsApi.markAsRead(id)
     setNotifications(n => n.map(x => x.id?.toString() === id ? { ...x, isRead: true } : x))
-    // Tell sidebar to decrement its count
     window.dispatchEvent(new CustomEvent('notifications:marked-one'))
   }
 
@@ -39,11 +42,13 @@ export default function Notifications() {
         </div>
         {unread > 0 && <button className="btn btn-outline btn-sm text-brand" onClick={markAll}>Mark all as read</button>}
       </div>
+
       {notifications.length === 0 ? (
         <div className="empty-state"><div className="empty-icon">🔔</div><p className="text-muted">You're all caught up!</p></div>
       ) : (
         <div className="space-y-sm">
           {notifications.map(n => {
+            // Build a contextual link to the related recipe or user profile
             const link = n.relatedRecipeId ? `/recipes/${n.relatedRecipeId}` : n.relatedUserId ? `/chefs/${n.relatedUserId}` : null
             return (
               <div key={n.id} className={`notif-item${n.isRead ? '' : ' unread'}`}>

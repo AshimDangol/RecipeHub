@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom'
 import { mediaUrl } from '../api.js'
 
+// Maps difficulty level to the corresponding CSS badge class
 const diffBadge = { Easy: 'badge-easy', Medium: 'badge-medium', Hard: 'badge-hard' }
 
+// Card component used in recipe grids — links to the recipe detail page
 export default function RecipeCard({ recipe: r }) {
   const img = mediaUrl(r.imageUrl)
   return (
     <Link to={`/recipes/${r.id}`} className="card recipe-card">
+      {/* Recipe image or placeholder icon */}
       <div className="recipe-card-img">
         {img ? <img src={img} alt={r.title} loading="lazy" /> : <span className="recipe-card-placeholder">🍽️</span>}
         <span className={`recipe-card-badge badge ${diffBadge[r.difficulty] ?? ''}`}>{r.difficulty}</span>

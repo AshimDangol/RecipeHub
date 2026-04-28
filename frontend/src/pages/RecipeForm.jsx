@@ -3,21 +3,23 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { recipesApi, mediaUrl } from '../api.js'
 import { showToast } from '../toast.js'
 
+// Create or edit a recipe — recipeId in the URL params means edit mode
 export default function RecipeForm() {
   const { id: recipeId } = useParams()
   const navigate = useNavigate()
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('')
-  const [difficulty, setDifficulty] = useState('')
-  const [prepTime, setPrepTime] = useState('')
-  const [ingredients, setIngredients] = useState([{ name: '', quantity: '' }])
+  const [title, setTitle]               = useState('')
+  const [description, setDescription]   = useState('')
+  const [category, setCategory]         = useState('')
+  const [difficulty, setDifficulty]     = useState('')
+  const [prepTime, setPrepTime]         = useState('')
+  const [ingredients, setIngredients]   = useState([{ name: '', quantity: '' }])
   const [instructions, setInstructions] = useState([{ stepText: '' }])
-  const [photoFile, setPhotoFile] = useState(null)
+  const [photoFile, setPhotoFile]       = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState('')
 
+  // Pre-fill the form when editing an existing recipe
   useEffect(() => {
     if (!recipeId) return
     recipesApi.getById(recipeId).then(r => {
@@ -30,6 +32,7 @@ export default function RecipeForm() {
     }).catch(() => { showToast('Failed to load recipe', 'error'); navigate('/recipes') })
   }, [recipeId])
 
+  // Preview the selected photo locally before upload
   const handlePhoto = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -37,24 +40,28 @@ export default function RecipeForm() {
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  const updateIngredient = (i, field, val) => setIngredients(prev => prev.map((ing, idx) => idx === i ? { ...ing, [field]: val } : ing))
-  const removeIngredient = (i) => setIngredients(prev => prev.filter((_, idx) => idx !== i))
+  // Ingredient list helpers
+  const updateIngredient  = (i, field, val) => setIngredients(prev => prev.map((ing, idx) => idx === i ? { ...ing, [field]: val } : ing))
+  const removeIngredient  = (i) => setIngredients(prev => prev.filter((_, idx) => idx !== i))
+
+  // Instruction list helpers
   const updateInstruction = (i, val) => setInstructions(prev => prev.map((inst, idx) => idx === i ? { stepText: val } : inst))
   const removeInstruction = (i) => setInstructions(prev => prev.filter((_, idx) => idx !== i))
 
+  // Submit — create or update the recipe, then upload the photo if one was selected
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(''); setLoading(true)
     const body = {
       title, description, category, difficulty,
       preparationTimeMinutes: parseInt(prepTime),
-      ingredients: ingredients.map((ing, i) => ({ ...ing, orderIndex: i })),
+      ingredients:  ingredients.map((ing, i) => ({ ...ing, orderIndex: i })),
       instructions: instructions.map((inst, i) => ({ ...inst, orderIndex: i })),
     }
     try {
       let saved
       if (recipeId) saved = await recipesApi.update(recipeId, body)
-      else saved = await recipesApi.create(body)
+      else          saved = await recipesApi.create(body)
       if (photoFile) {
         const savedId = saved?.data?._id ?? saved?.data?.id ?? recipeId
         try { await recipesApi.uploadImage(savedId, photoFile) }
@@ -77,6 +84,7 @@ export default function RecipeForm() {
       </div>
       {error && <div className="alert alert-error">{error}</div>}
       <form className="space-y" onSubmit={handleSubmit}>
+        {/* Basic info */}
         <div className="card card-body space-y-sm">
           <h2 className="text-xs font-semibold text-muted" style={{ textTransform: 'uppercase', letterSpacing: '.05em' }}>Basic Info</h2>
           <div className="form-group">
@@ -108,6 +116,7 @@ export default function RecipeForm() {
           </div>
         </div>
 
+        {/* Photo upload */}
         <div className="card card-body space-y-sm">
           <h2 className="text-xs font-semibold text-muted" style={{ textTransform: 'uppercase', letterSpacing: '.05em' }}>Photo</h2>
           {photoPreview && <img src={photoPreview} alt="Preview" style={{ maxHeight: 200, borderRadius: '.5rem', objectFit: 'cover', maxWidth: '100%', marginBottom: '.75rem' }} />}
@@ -115,6 +124,7 @@ export default function RecipeForm() {
           <p className="text-muted" style={{ fontSize: '.8rem', marginTop: '.25rem' }}>Max 10 MB. JPG, PNG, GIF or WebP.</p>
         </div>
 
+        {/* Ingredients */}
         <div className="card card-body space-y-sm">
           <h2 className="text-xs font-semibold text-muted" style={{ textTransform: 'uppercase', letterSpacing: '.05em' }}>Ingredients</h2>
           {ingredients.map((ing, i) => (
@@ -127,6 +137,7 @@ export default function RecipeForm() {
           <button type="button" className="btn-link text-brand text-sm" onClick={() => setIngredients(p => [...p, { name: '', quantity: '' }])}>+ Add Ingredient</button>
         </div>
 
+        {/* Instructions */}
         <div className="card card-body space-y-sm">
           <h2 className="text-xs font-semibold text-muted" style={{ textTransform: 'uppercase', letterSpacing: '.05em' }}>Instructions</h2>
           {instructions.map((inst, i) => (

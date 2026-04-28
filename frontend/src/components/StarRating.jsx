@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
 
+// Interactive (or read-only) 1–5 star rating widget.
+// Pass onChange to make it interactive; readOnly to disable interaction.
 export default function StarRating({ value, onChange, size = '1.5rem', readOnly = false }) {
-  const [hover, setHover] = useState(0)
+  const [hover, setHover] = useState(0) // star index currently hovered
+
   return (
     <div className="stars">
       {[1, 2, 3, 4, 5].map(s => (

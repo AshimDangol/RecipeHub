@@ -5,22 +5,25 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { showToast } from '../toast.js'
 import RecipeCard from '../components/RecipeCard.jsx'
 
+// Public chef profile page with follow/unfollow and recipe grid
 export default function ChefDetail() {
   const { id } = useParams()
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [chef, setChef] = useState(null)
-  const [isFollowing, setIsFollowing] = useState(false)
+  const [chef, setChef]                   = useState(null)
+  const [isFollowing, setIsFollowing]     = useState(false)
   const [followerCount, setFollowerCount] = useState(0)
   const [followLoading, setFollowLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const [error, setError]                 = useState(false)
 
+  // Load chef data and follow status on mount
   useEffect(() => {
     async function load() {
       try {
         const r = await chefsApi.getById(id)
         setChef(r.data); setFollowerCount(r.data.followerCount)
         const isOwn = user?.id?.toString() === id
+        // Only fetch follow status for other users
         if (isAuthenticated && !isOwn) {
           try { const s = await chefsApi.getFollowStatus(id); setIsFollowing(s.data.isFollowing) } catch {}
         }
@@ -29,6 +32,7 @@ export default function ChefDetail() {
     load()
   }, [id, isAuthenticated])
 
+  // Toggle follow/unfollow and update the displayed follower count
   const handleFollow = async () => {
     if (!isAuthenticated) { navigate('/login'); return }
     setFollowLoading(true)
@@ -50,6 +54,7 @@ export default function ChefDetail() {
 
   return (
     <div className="space-y">
+      {/* Chef header card */}
       <div className="card card-body">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -61,6 +66,7 @@ export default function ChefDetail() {
               <p className="profile-meta">{chef.recipeCount} recipes · {followerCount} followers</p>
             </div>
           </div>
+          {/* Follow button — hidden for own profile */}
           {isAuthenticated && !isOwn && (
             <button className={`btn ${isFollowing ? 'btn-secondary' : 'btn-primary'}`} onClick={handleFollow} disabled={followLoading}>
               {followLoading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}
@@ -69,6 +75,8 @@ export default function ChefDetail() {
         </div>
         {chef.aboutMe && <p style={{ marginTop: '1.5rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>{chef.aboutMe}</p>}
       </div>
+
+      {/* Recipe grid */}
       {recipes.length > 0 && (
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.25rem' }}>Recipes by {chef.displayName}</h2>

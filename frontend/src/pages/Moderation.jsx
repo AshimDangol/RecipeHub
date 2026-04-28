@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { adminApi } from '../api.js'
 import { showToast } from '../toast.js'
 
+// Content moderation page with three tabs: flagged content, browse & flag, and audit log
 export default function Moderation() {
   const [activeTab, setActiveTab] = useState('flagged')
   return (
@@ -42,7 +43,7 @@ function SearchBar({ value, onChange, placeholder }) {
   )
 }
 
-/* ── Flagged Tab ── */
+/* ── Flagged Tab — lists flagged recipes and reviews with restore actions ── */
 function FlaggedTab() {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
@@ -136,7 +137,7 @@ function FlaggedTab() {
   )
 }
 
-/* ── Browse & Flag Tab ── */
+/* ── Browse & Flag Tab — paginated content browser with flag action ── */
 function BrowseTab() {
   const [contentType, setContentType] = useState('recipe')
   const [items, setItems]             = useState([])
@@ -259,7 +260,7 @@ function BrowseTab() {
   )
 }
 
-/* ── Audit Log Tab ── */
+/* ── Audit Log Tab — paginated history of all moderation actions ── */
 function LogsTab() {
   const [logs, setLogs]         = useState([])
   const [meta, setMeta]         = useState({ totalPages: 1, totalCount: 0 })

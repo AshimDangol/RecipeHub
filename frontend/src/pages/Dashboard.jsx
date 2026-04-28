@@ -5,14 +5,16 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { showToast } from '../toast.js'
 import RecipeCard from '../components/RecipeCard.jsx'
 
+// Personal dashboard — shows stats, the user's own recipes, and saved favorites
 export default function Dashboard() {
   const { user } = useAuth()
-  const [recipes, setRecipes] = useState([])
+  const [recipes, setRecipes]   = useState([])
   const [favorites, setFavorites] = useState([])
-  const [stats, setStats] = useState({ recipeCount: 0, followerCount: 0, totalLikes: 0, totalReviews: 0 })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [stats, setStats]       = useState({ recipeCount: 0, followerCount: 0, totalLikes: 0, totalReviews: 0 })
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(false)
 
+  // Load the user's recipes and favorites in parallel
   useEffect(() => {
     async function load() {
       try {
@@ -23,11 +25,12 @@ export default function Dashboard() {
         const r = chefRes?.data?.recipes ?? []
         setRecipes(r)
         setFavorites(favRes?.data?.data ?? [])
+        // Derive stats from the fetched data
         setStats({
-          recipeCount: chefRes?.data?.recipeCount ?? r.length,
+          recipeCount:   chefRes?.data?.recipeCount ?? r.length,
           followerCount: chefRes?.data?.followerCount ?? 0,
-          totalLikes: r.reduce((s, x) => s + (x.likeCount ?? 0), 0),
-          totalReviews: r.reduce((s, x) => s + (x.reviewCount ?? 0), 0),
+          totalLikes:    r.reduce((s, x) => s + (x.likeCount ?? 0), 0),
+          totalReviews:  r.reduce((s, x) => s + (x.reviewCount ?? 0), 0),
         })
       } catch { setError(true) }
       setLoading(false)
@@ -35,6 +38,7 @@ export default function Dashboard() {
     load()
   }, [user.id])
 
+  // Delete a recipe and update local state without a full reload
   const handleDelete = async (id) => {
     if (!confirm('Delete this recipe? This cannot be undone.')) return
     try {
@@ -42,10 +46,11 @@ export default function Dashboard() {
       showToast('Recipe deleted', 'info')
       setRecipes(prev => {
         const next = prev.filter(r => r.id?.toString() !== id)
+        // Recalculate stats after removal
         setStats(s => ({
           ...s,
-          recipeCount: next.length,
-          totalLikes: next.reduce((a, r) => a + (r.likeCount ?? 0), 0),
+          recipeCount:  next.length,
+          totalLikes:   next.reduce((a, r) => a + (r.likeCount ?? 0), 0),
           totalReviews: next.reduce((a, r) => a + (r.reviewCount ?? 0), 0),
         }))
         return next
@@ -54,7 +59,7 @@ export default function Dashboard() {
   }
 
   if (loading) return <div className="spinner-center"><div className="spinner" /></div>
-  if (error) return <div className="empty-state"><p style={{ color: '#ef4444' }}>Failed to load dashboard</p></div>
+  if (error)   return <div className="empty-state"><p style={{ color: '#ef4444' }}>Failed to load dashboard</p></div>
 
   return (
     <div className="space-y">
@@ -69,6 +74,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Summary stat cards */}
       <div className="dashboard-stats">
         {[['Recipes', stats.recipeCount], ['Followers', stats.followerCount], ['Total Likes', stats.totalLikes], ['Total Reviews', stats.totalReviews]].map(([label, val]) => (
           <div key={label} className="stat-card">
@@ -78,6 +84,7 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* My Recipes list */}
       <div>
         <div className="section-header" style={{ marginBottom: '1rem' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>My Recipes</h2>
@@ -115,6 +122,7 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Saved favorites grid */}
       {favorites.length > 0 && (
         <div>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1rem' }}>Saved Favorites</h2>

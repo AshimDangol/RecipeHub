@@ -1,3 +1,4 @@
+// Floating AI chat widget powered by Ollama — streams responses token by token
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { chatApi } from '../api.js'
 
@@ -9,6 +10,7 @@ const SUGGESTIONS = [
   'How do I create a recipe on RecipeNest?',
 ]
 
+// Animated typing indicator shown while the bot is generating a response
 function TypingDots() {
   return (
     <span className="chat-typing-dots">
@@ -17,6 +19,7 @@ function TypingDots() {
   )
 }
 
+// Single chat message bubble — user messages appear on the right, bot on the left
 function Message({ msg }) {
   const isUser = msg.role === 'user'
   return (
@@ -49,12 +52,12 @@ export default function OllamaChat() {
   const inputRef = useRef(null)
   const abortRef = useRef(false)
 
-  // Scroll to bottom whenever messages change
+  // Scroll to the latest message whenever the messages array changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Focus input when panel opens
+  // Focus the input field when the panel opens
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 80)
   }, [open])
@@ -107,6 +110,7 @@ export default function OllamaChat() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
 
+  // Reset the conversation to the initial greeting
   const clearChat = () => {
     abortRef.current = true
     setStreaming(false)

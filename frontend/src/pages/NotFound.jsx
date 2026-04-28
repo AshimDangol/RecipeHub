@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+// Shown for any route that doesn't match a defined path
 export default function NotFound() {
   return (
     <div className="empty-state">

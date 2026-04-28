@@ -1,10 +1,12 @@
 let counter = 0
 const icons = { success: '✓', error: '✕', info: 'ℹ' }
 
+// Show a toast notification in the #toast-container element
 export function showToast(message, type = 'info') {
   const id = `toast-${++counter}`
   const container = document.getElementById('toast-container')
   if (!container) return
+
   const el = document.createElement('div')
   el.className = `toast toast-${type}`
   el.id = id
@@ -14,11 +16,15 @@ export function showToast(message, type = 'info') {
     <span>${message}</span>
     <button class="toast-close" aria-label="Dismiss">✕</button>
   `
+  // Allow manual dismissal via the close button
   el.querySelector('.toast-close').addEventListener('click', () => dismiss(id))
   container.appendChild(el)
+
+  // Auto-dismiss after 3.5 seconds
   setTimeout(() => dismiss(id), 3500)
 }
 
+// Remove a toast element from the DOM by its ID
 function dismiss(id) {
   document.getElementById(id)?.remove()
 }

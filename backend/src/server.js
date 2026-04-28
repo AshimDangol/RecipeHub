@@ -4,6 +4,7 @@ import { connectDB } from './config/db.js'
 
 const PORT = process.env.PORT || 5200
 
+// Connect to the database then start the HTTP server
 async function start() {
   await connectDB()
   app.listen(PORT, () => console.log(`RecipeNest Node API running on http://localhost:${PORT}`))

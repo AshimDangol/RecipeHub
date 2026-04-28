@@ -13,7 +13,8 @@ import chatRoutes from './routes/chat.js'
 
 const app = express()
 
-// CORS
+// ── CORS ─────────────────────────────────────────────────────────────────────
+// Allow origins listed in CORS_ORIGINS env var plus any localhost/LAN address
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173')
   .split(',').map(s => s.trim())
 
@@ -29,15 +30,16 @@ app.use(cors({
   credentials: true,
 }))
 
-// Body parsing
+// ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Serve uploaded files
+// ── Static uploads ────────────────────────────────────────────────────────────
+// Serve uploaded images from the configured upload directory
 const uploadDir = path.resolve(process.env.UPLOAD_DIR || 'uploads')
 app.use('/uploads', express.static(uploadDir))
 
-// Routes
+// ── API routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRoutes)
 app.use('/api/users',         usersRoutes)
 app.use('/api/recipes',       recipesRoutes)
@@ -47,10 +49,10 @@ app.use('/api/notifications', notificationsRoutes)
 app.use('/api/admin',         adminRoutes)
 app.use('/api/chat',          chatRoutes)
 
-// 404
+// ── 404 fallback ──────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } }))
 
-// Global error handler
+// ── Global error handler ──────────────────────────────────────────────────────
 app.use(errorHandler)
 
 export default app

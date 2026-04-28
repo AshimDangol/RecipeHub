@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 
+// Feature highlights shown in the landing page grid
 const features = [
   { icon: '🍳', title: 'Cook & Share', desc: 'Share your culinary creations with a passionate community of food lovers.' },
   { icon: '⭐', title: 'Rate & Review', desc: 'Help others discover great recipes with honest ratings and reviews.' },
@@ -9,10 +10,12 @@ const features = [
   { icon: '❤️', title: 'Save Favorites', desc: 'Bookmark recipes you love and build your personal cookbook.' },
 ]
 
+// Landing / home page — hero section, feature grid, and CTA for guests
 export default function Home() {
   const { isAuthenticated } = useAuth()
   return (
     <div className="space-y">
+      {/* Hero banner */}
       <section className="hero">
         <span className="hero-badge">🎉 Join thousands of food lovers</span>
         <h1>Discover &amp; Share<span>Amazing Recipes</span></h1>
@@ -22,6 +25,8 @@ export default function Home() {
           {!isAuthenticated && <Link to="/register" className="btn btn-secondary btn-lg">Join for Free</Link>}
         </div>
       </section>
+
+      {/* Feature cards */}
       <section>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <h2 className="font-bold" style={{ fontSize: '1.875rem', marginBottom: '.75rem' }}>Everything you need to cook better</h2>
@@ -37,6 +42,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Call-to-action for unauthenticated visitors */}
       {!isAuthenticated && (
         <section className="cta">
           <h2>Ready to start cooking?</h2>

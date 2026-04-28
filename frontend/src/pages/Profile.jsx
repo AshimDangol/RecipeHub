@@ -4,31 +4,35 @@ import { chefsApi, usersApi, mediaUrl } from '../api.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import RecipeCard from '../components/RecipeCard.jsx'
 
+// Public user profile page with tabbed sections for recipes, favorites, and following
 export default function Profile() {
   const { id } = useParams()
   const { user, isAuthenticated } = useAuth()
-  const isOwn = user?.id?.toString() === id
-  const [profile, setProfile]   = useState(null)
-  const [recipes, setRecipes]   = useState([])
+  const isOwn = user?.id?.toString() === id // true when viewing own profile
+  const [profile, setProfile]     = useState(null)
+  const [recipes, setRecipes]     = useState([])
   const [favorites, setFavorites] = useState([])
   const [following, setFollowing] = useState([])
   const [activeTab, setActiveTab] = useState('recipes')
-  const [error, setError]       = useState(false)
+  const [error, setError]         = useState(false)
 
   useEffect(() => {
     async function load() {
       try {
+        // Try chef endpoint first (includes recipe list); fall back to basic user
         const r = await chefsApi.getById(id)
         setProfile(r.data); setRecipes(r.data.recipes ?? [])
       } catch {
         try { const r = await usersApi.getById(id); setProfile(r.data) }
         catch { setError(true); return }
       }
+      // Load extra tabs only for the profile owner
       if (isOwn && isAuthenticated) {
         try { const r = await usersApi.getFavorites(id); setFavorites(r.data.data ?? []) } catch {}
         try {
           const r = await usersApi.getFollowing(id)
           const basic = r.data.data ?? []
+          // Enrich each followed user with their recipe/follower counts
           const enriched = await Promise.all(basic.map(async u => {
             try { const cr = await chefsApi.getById(u.id); return { ...u, recipeCount: cr.data.recipeCount, followerCount: cr.data.followerCount } }
             catch { return u }
@@ -43,11 +47,12 @@ export default function Profile() {
   if (error)    return <div className="empty-state"><p style={{ color: '#ef4444' }}>Failed to load profile</p></div>
   if (!profile) return <div className="spinner-center"><div className="spinner" /></div>
 
+  // Build tab list — favorites and following only visible to the profile owner
   const tabs = [
-    { key: 'recipes',   label: `Recipes`,   count: recipes.length },
+    { key: 'recipes',   label: 'Recipes',   count: recipes.length },
     ...(isOwn ? [
-      { key: 'favorites', label: `Favorites`, count: favorites.length },
-      { key: 'following', label: `Following`, count: following.length },
+      { key: 'favorites', label: 'Favorites', count: favorites.length },
+      { key: 'following', label: 'Following', count: following.length },
     ] : []),
   ]
 
@@ -55,9 +60,7 @@ export default function Profile() {
     <div className="space-y">
       {/* ── Profile hero card ── */}
       <div className="profile-hero-card card">
-        {/* Cover strip */}
         <div className="profile-cover" />
-
         <div className="profile-hero-body">
           {/* Avatar */}
           <div className="profile-hero-avatar">
@@ -65,8 +68,7 @@ export default function Profile() {
               ? <img src={mediaUrl(profile.profilePhotoUrl)} alt={profile.displayName} />
               : <span>{profile.displayName.charAt(0).toUpperCase()}</span>}
           </div>
-
-          {/* Info + actions row */}
+          {/* Name, stats, and edit button */}
           <div className="profile-hero-info">
             <div>
               <h1 className="profile-hero-name">{profile.displayName}</h1>
@@ -84,13 +86,9 @@ export default function Profile() {
               <Link to="/profile/edit" className="btn btn-outline btn-sm">✏️ Edit Profile</Link>
             )}
           </div>
-
-          {/* Bio */}
           {profile.aboutMe && (
             <p className="profile-hero-bio">{profile.aboutMe}</p>
           )}
-
-          {/* Links */}
           {(profile.contactLinks || profile.socialMediaLinks) && (
             <div className="profile-hero-links">
               {profile.contactLinks    && <span>📧 {profile.contactLinks}</span>}
@@ -100,7 +98,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
+      {/* ── Tab navigation ── */}
       <div className="profile-tabs">
         {tabs.map(t => (
           <button

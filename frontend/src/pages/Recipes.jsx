@@ -4,27 +4,30 @@ import { recipesApi } from '../api.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import RecipeCard from '../components/RecipeCard.jsx'
 
-const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Soup', 'Salad', 'Drinks']
+const CATEGORIES  = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Soup', 'Salad', 'Drinks']
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard']
 
+// Paginated, filterable recipe browser
 export default function Recipes() {
   const { isAuthenticated } = useAuth()
-  const [recipes, setRecipes] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('All')
-  const [difficulty, setDifficulty] = useState('All')
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const debounceRef = useRef(null)
+  const [recipes, setRecipes]           = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState(false)
+  const [search, setSearch]             = useState('')
+  const [category, setCategory]         = useState('All')
+  const [difficulty, setDifficulty]     = useState('All')
+  const [page, setPage]                 = useState(1)
+  const [totalPages, setTotalPages]     = useState(1)
+  const debounceRef                     = useRef(null)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
+  // Debounce the search input to avoid firing a request on every keystroke
   useEffect(() => {
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => { setDebouncedSearch(search); setPage(1) }, 400)
   }, [search])
 
+  // Fetch recipes whenever page, search, category, or difficulty changes
   const fetchRecipes = useCallback(async () => {
     setLoading(true); setError(false)
     try {
@@ -41,7 +44,8 @@ export default function Recipes() {
 
   useEffect(() => { fetchRecipes() }, [fetchRecipes])
 
-  const handleCategory = (c) => { setCategory(c); setPage(1) }
+  // Reset to page 1 when a filter changes
+  const handleCategory  = (c) => { setCategory(c); setPage(1) }
   const handleDifficulty = (d) => { setDifficulty(d); setPage(1) }
 
   return (
@@ -54,11 +58,13 @@ export default function Recipes() {
         {isAuthenticated && <Link to="/recipes/create" className="btn btn-primary">+ New Recipe</Link>}
       </div>
 
+      {/* Search bar */}
       <div className="search-wrap">
         <span className="search-icon">🔍</span>
         <input type="search" className="form-input search-input" placeholder="Search recipes by title or ingredient…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search recipes" />
       </div>
 
+      {/* Category filter */}
       <div>
         <p className="text-xs text-muted" style={{ marginBottom: '.5rem', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 600 }}>Category</p>
         <div className="sort-btns" style={{ flexWrap: 'wrap' }}>
@@ -66,6 +72,7 @@ export default function Recipes() {
         </div>
       </div>
 
+      {/* Difficulty filter */}
       <div>
         <p className="text-xs text-muted" style={{ marginBottom: '.5rem', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 600 }}>Difficulty</p>
         <div className="sort-btns">
@@ -73,6 +80,7 @@ export default function Recipes() {
         </div>
       </div>
 
+      {/* Results grid — skeleton, error, empty, or cards */}
       {loading ? (
         <div className="grid-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -103,6 +111,7 @@ export default function Recipes() {
         </div>
       )}
 
+      {/* Pagination controls */}
       {totalPages > 1 && (
         <div className="pagination">
           <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Previous</button>

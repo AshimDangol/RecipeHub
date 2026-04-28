@@ -1,3 +1,4 @@
+// Recipe detail page — shows full recipe info, like/favorite actions, share buttons, and reviews
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { recipesApi, reviewsApi, mediaUrl } from '../api.js'
@@ -5,6 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { showToast } from '../toast.js'
 import StarRating from '../components/StarRating.jsx'
 
+// Maps difficulty to badge CSS class
 const diffColor = { Easy: 'badge-easy', Medium: 'badge-medium', Hard: 'badge-hard' }
 
 export default function RecipeDetail() {
@@ -19,6 +21,7 @@ export default function RecipeDetail() {
   const [favLoading, setFavLoading] = useState(false)
   const [error, setError] = useState(false)
 
+  // Load recipe data and the current user's like/favorite status
   useEffect(() => {
     async function load() {
       try {
@@ -32,6 +35,7 @@ export default function RecipeDetail() {
     load()
   }, [id, isAuthenticated])
 
+  // Toggle like and update the displayed count
   const handleLike = async () => {
     if (!isAuthenticated) { navigate('/login'); return }
     setLikeLoading(true)
@@ -42,6 +46,7 @@ export default function RecipeDetail() {
     setLikeLoading(false)
   }
 
+  // Toggle favorite
   const handleFav = async () => {
     if (!isAuthenticated) { navigate('/login'); return }
     setFavLoading(true)
@@ -58,6 +63,7 @@ export default function RecipeDetail() {
     catch { showToast('Failed to delete recipe', 'error') }
   }
 
+  // Open a social share URL in a new tab
   const handleShare = (platform) => {
     const url = encodeURIComponent(window.location.href)
     const title = encodeURIComponent(recipe.title)
@@ -152,6 +158,7 @@ export default function RecipeDetail() {
   )
 }
 
+// Container for the reviews list and write-review form
 function ReviewsSection({ recipeId }) {
   const { user, isAuthenticated } = useAuth()
   const [reviews, setReviews] = useState([])
@@ -188,6 +195,7 @@ function ReviewsSection({ recipeId }) {
   )
 }
 
+// Form for submitting a new review
 function WriteReview({ recipeId, onSubmit }) {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -230,6 +238,7 @@ function WriteReview({ recipeId, onSubmit }) {
   )
 }
 
+// Single review row with inline edit and delete for the review owner
 function ReviewCard({ review: rv, currentUser, editing, onEdit, onCancelEdit, onSaved, onDeleted }) {
   const [editRating, setEditRating] = useState(rv.rating)
   const [editComment, setEditComment] = useState(rv.comment ?? '')

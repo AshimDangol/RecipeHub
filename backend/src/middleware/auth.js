@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 
+// Verify JWT token from the Authorization header and attach user to request
 export function authenticate(req, res, next) {
   const header = req.headers.authorization
   if (!header?.startsWith('Bearer ')) {
@@ -7,6 +8,7 @@ export function authenticate(req, res, next) {
   }
   const token = header.slice(7)
   try {
+    // Decode and verify the token; attach payload as req.user
     req.user = jwt.verify(token, process.env.JWT_SECRET)
     next()
   } catch {
@@ -14,6 +16,7 @@ export function authenticate(req, res, next) {
   }
 }
 
+// Guard routes that require admin privileges
 export function requireAdmin(req, res, next) {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Admin access required' } })
