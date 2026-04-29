@@ -18,6 +18,167 @@ A full-stack recipe sharing platform built with React and Node.js. Chefs publish
 
 ---
 
+## Installation Guide
+
+### Prerequisites
+
+Make sure the following are installed on your machine before you begin.
+
+| Requirement | Version | Notes |
+|---|---|---|
+| [Node.js](https://nodejs.org) | 18 or higher | Includes `npm` |
+| [MongoDB](https://www.mongodb.com/try/download/community) | 6 or higher | Must be running locally on port `27017` |
+| [Git](https://git-scm.com) | Any | To clone the repository |
+| [Ollama](https://ollama.com/download) | Latest | Optional — only needed for ChefBot AI |
+
+Verify your versions:
+
+```bash
+node -v      # should print v18.x.x or higher
+npm -v       # should print 9.x.x or higher
+mongod --version
+```
+
+---
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/AshimDangol/RecipeHub.git
+cd recipenest
+```
+
+---
+
+### 2. Configure the backend environment
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Open `backend/.env` and fill in the required values:
+
+```env
+PORT=5200
+MONGODB_URI=mongodb://localhost:27017/recipenest
+JWT_SECRET=replace_this_with_a_long_random_string
+JWT_EXPIRES_IN=7d
+UPLOAD_DIR=uploads
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2:latest
+```
+
+> **`JWT_SECRET` is required.** Use a strong random string — for example, run `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` to generate one.
+
+---
+
+### 3. Install backend dependencies
+
+```bash
+# still inside the backend/ directory
+npm install
+```
+
+---
+
+### 4. Install frontend dependencies
+
+```bash
+cd ../frontend
+npm install
+```
+
+---
+
+### 5. Set up the database
+
+Make sure MongoDB is running, then from the `backend/` directory:
+
+```bash
+cd ../backend
+
+# Create the admin account
+node src/scripts/createAdmin.js
+
+# Seed 10 chef users, 50 recipes, follows, and likes
+node src/scripts/seed.js
+```
+
+Both scripts are idempotent — safe to run more than once.
+
+---
+
+### 6. (Optional) Set up Ollama for ChefBot
+
+ChefBot requires [Ollama](https://ollama.com/download) running locally. Skip this step if you don't need the AI assistant.
+
+```bash
+# Pull the default model (one-time download, ~2 GB)
+ollama pull llama3.2
+
+# Start the Ollama server (if it isn't already running)
+ollama serve
+```
+
+To use a different model, pull it and update `OLLAMA_MODEL` in `backend/.env` to match the name shown by `ollama list`.
+
+---
+
+### 7. Start the development servers
+
+You need **two terminals** running simultaneously.
+
+**Terminal 1 — Backend**
+
+```bash
+cd backend
+npm run dev
+```
+
+The API will be available at `http://localhost:5200`.
+
+**Terminal 2 — Frontend**
+
+```bash
+cd frontend
+npm run dev
+```
+
+The app will open at `http://localhost:3000`.
+
+---
+
+### 8. Log in
+
+Once both servers are running, open `http://localhost:3000` in your browser.
+
+**Admin account**
+
+| Field | Value |
+|---|---|
+| Email | `admin@recipenest.com` |
+| Password | `Admin@1234` |
+
+Or log in as any of the seeded chefs — credentials are listed in the [Seed Data](#seed-data) section below.
+
+---
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `MONGODB_URI is not set` | Make sure `backend/.env` exists and contains `MONGODB_URI` |
+| `JWT_SECRET is not set` | Add a value for `JWT_SECRET` in `backend/.env` |
+| Login fails immediately after seeding | Restart the backend once to reset the in-memory rate limiter |
+| `Error: listen tcp 0.0.0.0:11434: bind: Only one usage...` | Ollama is already running — skip `ollama serve` |
+| ChefBot shows "Is Ollama running?" | Run `ollama serve` and confirm the model name in `.env` matches `ollama list` |
+| Port `5200` already in use | Change `PORT` in `backend/.env` and update `VITE_API_BASE_URL` in `frontend/.env` |
+| Images not loading | Confirm `UPLOAD_DIR` in `backend/.env` points to a writable directory |
+
+---
+
 ## Project Structure
 
 ```
